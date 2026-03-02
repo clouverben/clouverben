@@ -1,0 +1,2221 @@
+/* ==================== IMPORT FONT ==================== */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* ==================== RESET E BASE ==================== */
+:root {
+    --bg-base:       #080a12;
+    --bg-panel:      rgba(12, 14, 24, 0.96);
+    --bg-panel-2:    rgba(18, 20, 34, 0.92);
+    --bg-element:    rgba(255,255,255,0.04);
+    --bg-hover:      rgba(255,255,255,0.08);
+    --border:        rgba(255,255,255,0.08);
+    --border-focus:  rgba(102,126,234,0.6);
+
+    --accent:        #5f7fff;
+    --accent-glow:   rgba(95,127,255,0.35);
+    --accent-dim:    rgba(95,127,255,0.15);
+
+    --green:         #4cefac;
+    --green-glow:    rgba(76,239,172,0.3);
+    --yellow:        #ffd95c;
+    --red:           #ff5252;
+
+    --text-primary:  rgba(255,255,255,0.92);
+    --text-secondary:rgba(255,255,255,0.5);
+    --text-dim:      rgba(255,255,255,0.28);
+
+    --radius-sm:     6px;
+    --radius-md:     10px;
+    --radius-lg:     14px;
+
+    --font-ui:       'DM Sans', system-ui, sans-serif;
+    --font-mono:     'JetBrains Mono', 'Courier New', monospace;
+
+    --shadow-panel:  0 16px 48px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.4);
+    --shadow-btn:    0 2px 8px rgba(0,0,0,0.4);
+    --blur:          blur(16px);
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: var(--font-ui);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ==================== ÍCONES SVG (LUCIDE) ==================== */
+[data-lucide] {
+    width:  18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    fill: none;
+    display: block;
+    flex-shrink: 0;
+}
+
+/* ==================== BOTÕES PRINCIPAIS (TOP LEFT) ==================== */
+.menu-button, .material-button, .context-button {
+    position: absolute;
+    top: 16px;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    backdrop-filter: var(--blur);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.18s, border-color 0.18s, transform 0.15s, box-shadow 0.18s;
+    z-index: 10;
+    border: 1px solid var(--border);
+    background: var(--bg-panel-2);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-btn);
+}
+
+.menu-button     { left: 16px; }
+.material-button { left: 62px; }
+.context-button  { left: 108px; }
+
+.menu-button:hover,
+.material-button:hover,
+.context-button:hover {
+    background: var(--bg-hover);
+    border-color: rgba(255,255,255,0.18);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
+
+#particle-btn {
+    background: var(--bg-panel-2);
+    color: var(--text-primary);
+}
+#particle-btn:hover {
+    background: var(--bg-hover);
+    transform: translateY(-1px);
+}
+
+#light-btn {
+    background: rgba(255, 210, 60, 0.12);
+    color: var(--yellow);
+    border-color: rgba(255, 210, 60, 0.22);
+}
+#light-btn:hover {
+    background: rgba(255, 210, 60, 0.22);
+    border-color: rgba(255, 210, 60, 0.45);
+    box-shadow: 0 0 18px rgba(255,210,60,0.18);
+    transform: translateY(-1px);
+}
+
+/* ==================== BARRA SUPERIOR DIREITA ==================== */
+.top-right-toolbar {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    display: flex;
+    gap: 6px;
+}
+
+.toolbar-btn {
+    width: 38px;
+    height: 38px;
+    background: var(--bg-panel-2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    backdrop-filter: var(--blur);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.18s, color 0.18s, transform 0.15s, box-shadow 0.18s;
+    box-shadow: var(--shadow-btn);
+}
+
+.toolbar-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: rgba(255,255,255,0.16);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
+
+/* ==================== GIZMO COLUMN ==================== */
+.gizmo-column {
+    position: absolute;
+    top: 66px;
+    left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    z-index: 10;
+}
+
+.gizmo-btn {
+    width: 38px;
+    height: 38px;
+    background: var(--bg-panel-2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    backdrop-filter: var(--blur);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.15s, box-shadow 0.18s;
+    box-shadow: var(--shadow-btn);
+}
+
+.gizmo-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: rgba(255,255,255,0.16);
+    transform: translateX(2px);
+}
+
+.gizmo-btn.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: rgba(95,127,255,0.45);
+    box-shadow: 0 0 16px var(--accent-glow), var(--shadow-btn);
+}
+.gizmo-btn.active [data-lucide] { stroke: var(--accent); }
+
+/* ==================== PAINÉIS (BASE) ==================== */
+.panel {
+    position: absolute;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-panel);
+    backdrop-filter: var(--blur);
+    border: 1px solid var(--border);
+    z-index: 20;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.panel-header {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* ==================== SEPARADOR DE SEÇÃO ==================== */
+.section-label {
+    margin: 14px 0 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* ==================== PAINEL ESQUERDO ==================== */
+.left-panel {
+    top: 66px;
+    left: 16px;
+    width: 215px;
+    padding: 10px;
+    /* garante que não ultrapasse a tela em altura */
+    max-height: calc(100vh - 82px);
+    overflow-y: auto;
+}
+.left-panel::-webkit-scrollbar { width: 4px; }
+.left-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+.left-panel h3 {
+    margin: 12px 0 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.left-panel button {
+    width: 100%;
+    padding: 7px 10px;
+    margin-bottom: 4px;
+    background: var(--bg-element);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 12.5px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s, transform 0.12s;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.left-panel button [data-lucide] {
+    width: 14px;
+    height: 14px;
+    stroke: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.left-panel button:hover {
+    background: var(--accent-dim);
+    border-color: rgba(95,127,255,0.35);
+    transform: translateX(2px);
+}
+
+/* ==================== PAINEL DE MATERIAL ==================== */
+.material-panel {
+    top: 66px;
+    left: 108px;
+    width: 255px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 0;
+}
+.material-panel::-webkit-scrollbar { width: 4px; }
+.material-panel::-webkit-scrollbar-track { background: transparent; }
+.material-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+.material-panel .panel-header {
+    position: sticky;
+    top: 0;
+    background: rgba(12,14,24,0.98);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    z-index: 2;
+}
+#material-controls { padding: 14px; }
+
+/* ==================== PAINEL DE PARTÍCULAS E LUZES ==================== */
+.particle-panel, .light-panel {
+    top: 66px;
+    left: 154px;
+    width: 275px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 0;
+}
+.particle-panel::-webkit-scrollbar,
+.light-panel::-webkit-scrollbar { width: 4px; }
+.particle-panel::-webkit-scrollbar-thumb,
+.light-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+.particle-panel .panel-header,
+.light-panel .panel-header {
+    position: sticky;
+    top: 0;
+    background: rgba(12,14,24,0.98);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    z-index: 2;
+}
+#particle-controls, #light-controls { padding: 14px; }
+
+/* ==================== PAINEL DE OBJETOS ==================== */
+.compact-panel {
+    top: 62px;
+    right: 16px;
+    width: 260px;
+    max-height: 340px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.object-count {
+    background: var(--accent-dim);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.compact-list {
+    overflow-y: auto;
+    max-height: 280px;
+    padding: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+.compact-list::-webkit-scrollbar { width: 3px; }
+.compact-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius:3px; }
+
+.object-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 3px;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s, border-color 0.15s;
+    border: 1px solid transparent;
+    gap: 6px;
+}
+
+.object-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--border);
+}
+
+.object-item input[type="checkbox"] {
+    margin: 0;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+}
+
+.object-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--text-dim);
+    flex-shrink: 0;
+}
+.object-icon [data-lucide] { width: 14px; height: 14px; stroke-width: 2; }
+
+.object-name {
+    flex: 1;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.15s;
+}
+.object-name:hover { color: var(--text-primary); }
+
+.object-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s, background 0.15s;
+}
+.object-menu-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.object-menu-btn [data-lucide] { width: 13px; height: 13px; }
+
+/* ==================== PAINEL DE PÓS-PROCESSAMENTO ==================== */
+.post-panel {
+    top: 80px;
+    right: 292px;
+    width: 295px;
+    max-height: 510px;
+    overflow-y: auto;
+    padding: 0;
+}
+.post-panel::-webkit-scrollbar { width: 4px; }
+.post-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+.post-panel .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(12,14,24,0.98);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.download-btn {
+    background: rgba(76,239,172,0.14);
+    color: var(--green);
+    border: 1px solid rgba(76,239,172,0.3);
+    border-radius: var(--radius-sm);
+    padding: 5px 11px;
+    font-size: 12px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.18s, border-color 0.18s;
+    white-space: nowrap;
+}
+.download-btn:hover {
+    background: rgba(76,239,172,0.24);
+    border-color: rgba(76,239,172,0.55);
+    box-shadow: 0 0 14px var(--green-glow);
+}
+.download-btn [data-lucide] { width: 13px; height: 13px; }
+
+.post-controls { padding: 14px; }
+
+/* ==================== MENU DE CONTEXTO ==================== */
+.context-menu {
+    position: absolute;
+    background: rgba(14,16,28,0.98);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-panel), 0 0 0 1px rgba(255,255,255,0.08);
+    z-index: 10000;
+    min-width: 150px;
+    font-size: 12.5px;
+    padding: 5px;
+    backdrop-filter: var(--blur);
+}
+
+.context-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.context-menu li {
+    padding: 7px 10px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+}
+.context-menu li [data-lucide] { width: 13px; height: 13px; color: var(--text-dim); }
+.context-menu li:hover { background: var(--accent-dim); color: var(--text-primary); }
+.context-menu li:hover [data-lucide] { color: var(--accent); }
+.context-menu li.disabled { opacity: 0.3; pointer-events: none; }
+
+.context-menu li.separator {
+    height: 1px;
+    background: var(--border);
+    padding: 0;
+    margin: 3px 0;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* ==================== CONTROLES DE FORMULÁRIO ==================== */
+.control-group {
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.control-group:last-child { border-bottom: none; margin-bottom: 0; }
+
+.control-group label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 5px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+}
+
+.control-group input[type="color"] {
+    width: 100%;
+    height: 34px;
+    background: var(--bg-element);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 0.18s;
+}
+.control-group input[type="color"]:hover { border-color: rgba(255,255,255,0.2); }
+
+.control-group input[type="file"] {
+    width: 100%;
+    font-size: 11.5px;
+    font-family: var(--font-ui);
+    background: var(--bg-element);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.slider-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.slider-group input[type="range"] {
+    flex: 1;
+    height: 3px;
+    background: rgba(255,255,255,0.14);
+    border-radius: 3px;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.slider-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--accent-glow);
+    transition: transform 0.12s;
+}
+.slider-group input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.slider-group input[type="number"] {
+    width: 56px;
+    background: var(--bg-element);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    padding: 4px 6px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    text-align: center;
+    transition: border-color 0.18s;
+}
+.slider-group input[type="number"]:focus {
+    outline: none;
+    border-color: var(--border-focus);
+}
+
+.inline-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+.inline-controls input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.toggle {
+    position: relative;
+    width: 30px;
+    height: 17px;
+    flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    background: white;
+    border-radius: 50%;
+    left: 3px;
+    top: 3px;
+    transition: transform 0.2s;
+}
+.toggle input:checked + .toggle-slider { background: var(--accent); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(13px); }
+
+.clear-btn {
+    background: rgba(255,80,80,0.1);
+    border: 1px solid rgba(255,80,80,0.3);
+    color: var(--red);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: var(--font-ui);
+    margin-top: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.18s, border-color 0.18s;
+}
+.clear-btn:hover {
+    background: rgba(255,80,80,0.22);
+    border-color: rgba(255,80,80,0.55);
+}
+.clear-btn [data-lucide] { width: 12px; height: 12px; }
+
+.no-selection {
+    text-align: center;
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 12px;
+    padding: 24px;
+    user-select: none;
+}
+
+/* ==================== UTILITÁRIOS ==================== */
+.hidden { display: none !important; }
+
+/* ==================== BOTÃO IMPORTAR MODELO ==================== */
+#import-model-btn {
+    background: linear-gradient(135deg, rgba(142,68,173,0.5), rgba(52,152,219,0.5));
+    border-color: rgba(142,68,173,0.5);
+    color: white;
+    font-weight: 600;
+}
+#import-model-btn:hover {
+    background: linear-gradient(135deg, rgba(155,89,182,0.65), rgba(93,173,226,0.65));
+    border-color: rgba(155,89,182,0.7);
+    transform: translateX(2px);
+}
+
+/* ==================== ÁRVORE DE OBJETOS ==================== */
+.tree-item {
+    margin-left: 18px;
+    position: relative;
+    font-size: 12px;
+    line-height: 22px;
+}
+
+.tree-toggle {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-dim);
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    vertical-align: middle;
+    transition: color 0.15s, background 0.15s;
+}
+.tree-toggle [data-lucide] { width: 11px; height: 11px; }
+.tree-toggle.has-children { color: var(--text-secondary); }
+.tree-toggle.has-children:hover { color: var(--accent); background: var(--accent-dim); }
+
+.tree-children {
+    margin-left: 18px;
+    border-left: 1px solid rgba(255,255,255,0.07);
+    padding-left: 6px;
+}
+
+.tree-label {
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 5px;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+    display: inline-block;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+.tree-label:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.tree-checkbox {
+    margin-right: 4px;
+    vertical-align: middle;
+    accent-color: var(--accent);
+}
+
+/* ==================== PAINEL DE OSSO ==================== */
+.bone-button {
+    background: rgba(160,160,180,0.14);
+    color: rgba(220,220,240,0.85);
+    border-color: rgba(180,180,200,0.2);
+}
+.bone-button:hover {
+    background: rgba(160,160,180,0.24);
+    border-color: rgba(180,180,200,0.4);
+    transform: translateY(-1px);
+}
+
+.bone-panel {
+    top: 66px;
+    left: 154px;
+    width: 275px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 0;
+}
+.bone-panel .panel-header {
+    position: sticky;
+    top: 0;
+    background: rgba(12,14,24,0.98);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    z-index: 2;
+}
+#bone-controls { padding: 14px; }
+
+/* ==================== BOTÕES DE HISTÓRICO (UNDO/REDO) ==================== */
+.history-btn {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    padding: 5px 10px;
+    cursor: pointer;
+    backdrop-filter: var(--blur);
+    transition: background 0.18s, color 0.18s, transform 0.12s, border-color 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-family: var(--font-ui);
+    box-shadow: var(--shadow-btn);
+}
+.history-btn [data-lucide] { width: 14px; height: 14px; }
+.history-btn:hover {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: rgba(95,127,255,0.35);
+    transform: translateY(-1px);
+}
+.history-btn:active { transform: scale(0.96); }
+.history-btn:disabled { opacity: 0.25; pointer-events: none; }
+
+/* Versão compacta: apenas ícone, sem texto, quadrado */
+.history-btn.compact {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    box-shadow: none;
+    flex-shrink: 0;
+}
+.history-btn.compact [data-lucide] { width: 13px; height: 13px; }
+
+/* ==================== BOTÃO DE MENU DE OBJETOS ==================== */
+#context-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    margin-left: 2px;
+}
+#context-menu-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+#context-menu-btn [data-lucide] { width: 16px; height: 16px; }
+
+/* ==================== TIMELINE CONTAINER ==================== */
+#timeline-container {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 82%;
+    max-width: 1300px;
+    min-width: 500px;
+    background: rgba(8, 10, 20, 0.98);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    border-left: 1px solid rgba(255,255,255,0.05);
+    border-right: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px 12px 0 0;
+    z-index: 2000;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.7), 0 -1px 0 rgba(255,255,255,0.035);
+    user-select: none;
+}
+
+/* ==================== BARRA DA TIMELINE ==================== */
+.timeline-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px 11px;
+    height: 56px;
+    position: relative;
+}
+
+/* ==================== BOTÕES DA TIMELINE ==================== */
+.tl-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.75);
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.tl-btn [data-lucide] { width: 15px; height: 15px; }
+.tl-btn:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.22);
+    color: #fff;
+}
+
+.tl-play {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(76,239,172,0.12);
+    border-color: rgba(76,239,172,0.3);
+    color: var(--green);
+}
+.tl-play:hover {
+    background: rgba(76,239,172,0.22);
+    border-color: rgba(76,239,172,0.55);
+    color: #8dffd4;
+    box-shadow: 0 0 16px var(--green-glow);
+}
+.tl-play.playing {
+    background: rgba(255,82,82,0.14);
+    border-color: rgba(255,82,82,0.4);
+    color: var(--red);
+    box-shadow: 0 0 14px rgba(255,82,82,0.22);
+}
+
+.tl-kf-btn {
+    color: var(--yellow);
+    border-color: rgba(255,217,92,0.18);
+    background: rgba(255,217,92,0.07);
+}
+.tl-kf-btn:hover {
+    background: rgba(255,217,92,0.18);
+    border-color: rgba(255,217,92,0.45);
+    box-shadow: 0 0 12px rgba(255,217,92,0.28);
+}
+.tl-kf-btn.kf-flash {
+    background: rgba(255,217,92,0.38);
+    border-color: var(--yellow);
+    box-shadow: 0 0 22px rgba(255,217,92,0.55);
+    transform: scale(1.18);
+}
+
+/* ==================== TRACK ==================== */
+.timeline-track-wrapper {
+    flex: 1;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.07);
+    overflow: hidden;
+    position: relative;
+    cursor: crosshair;
+}
+
+.timeline-track {
+    width: 100%;
+    height: 100%;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.12) transparent;
+}
+.timeline-track::-webkit-scrollbar { height: 3px; }
+.timeline-track::-webkit-scrollbar-track { background: transparent; }
+.timeline-track::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+.timeline-frames {
+    height: 100%;
+    position: relative;
+    min-width: 100%;
+    background-image:
+        repeating-linear-gradient(90deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 14px),
+        repeating-linear-gradient(90deg,rgba(255,255,255,0.09) 0px,rgba(255,255,255,0.09) 1px,transparent 1px,transparent 70px);
+}
+
+/* ==================== RÉGUA ==================== */
+.timeline-ruler {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    pointer-events: none;
+}
+.ruler-tick {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    height: 28%;
+    background: rgba(255,255,255,0.12);
+}
+.ruler-tick-major {
+    height: 52%;
+    background: rgba(255,255,255,0.26);
+}
+.ruler-label {
+    position: absolute;
+    top: 56%;
+    left: 3px;
+    font-size: 9px;
+    color: rgba(255,255,255,0.28);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* ==================== KEYFRAMES ==================== */
+.timeline-kf-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    pointer-events: all;
+}
+
+.kf-diamond {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: var(--yellow);
+    border: 1px solid rgba(255,240,160,0.8);
+    box-shadow: 0 0 5px rgba(255,217,92,0.8), 0 0 16px rgba(255,217,92,0.3);
+    z-index: 5;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+.kf-diamond:hover {
+    transform: translateY(-50%) rotate(45deg) scale(1.35);
+    box-shadow: 0 0 10px rgba(255,217,92,1), 0 0 28px rgba(255,217,92,0.55);
+}
+
+/* ==================== PLAYHEAD ==================== */
+.timeline-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--red);
+    z-index: 10;
+    pointer-events: none;
+    box-shadow: 0 0 8px rgba(255,64,64,0.7), 0 0 18px rgba(255,64,64,0.25);
+}
+.timeline-playhead::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 7px;
+    height: 7px;
+    background: var(--red);
+    box-shadow: 0 0 6px rgba(255,64,64,0.9);
+}
+
+/* ==================== RELÓGIO ==================== */
+.tl-clock-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.tl-gear-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s, transform 0.2s;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.tl-gear-btn [data-lucide] { width: 12px; height: 12px; }
+.tl-gear-btn:hover { color: rgba(255,255,255,0.8); transform: rotate(30deg); }
+
+.tl-clock {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--green);
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(76,239,172,0.2);
+    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+    min-width: 60px;
+    text-align: center;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    box-shadow: 0 0 10px rgba(76,239,172,0.07) inset;
+}
+
+.tl-clock-label {
+    font-size: 9px;
+    color: rgba(76,239,172,0.4);
+    letter-spacing: 0;
+    font-weight: normal;
+}
+
+/* ==================== PAINEL DE FPS ==================== */
+.fps-panel {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    right: 14px;
+    background: rgba(12,14,26,0.99);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius-md);
+    padding: 11px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-panel);
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-family: var(--font-ui);
+    white-space: nowrap;
+    z-index: 10;
+}
+.fps-panel.hidden { display: none !important; }
+
+.fps-panel input[type="number"] {
+    width: 58px;
+    background: var(--bg-element);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #fff;
+    padding: 5px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: var(--font-mono);
+    text-align: center;
+}
+.fps-panel input[type="number"]:focus {
+    outline: none;
+    border-color: rgba(76,239,172,0.5);
+    box-shadow: 0 0 8px rgba(76,239,172,0.14);
+}
+
+.fps-panel button {
+    background: rgba(76,239,172,0.12);
+    border: 1px solid rgba(76,239,172,0.3);
+    color: var(--green);
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--font-ui);
+    transition: background 0.15s;
+}
+.fps-panel button:hover {
+    background: rgba(76,239,172,0.24);
+    border-color: rgba(76,239,172,0.5);
+}
+
+/* ==================== FLASH MESSAGE ==================== */
+.tl-flash-msg {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: rgba(16,18,32,0.97);
+    border: 1px solid rgba(255,217,92,0.35);
+    color: var(--yellow);
+    padding: 7px 16px;
+    border-radius: var(--radius-md);
+    font-size: 12.5px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 3000;
+    backdrop-filter: var(--blur);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.tl-flash-msg [data-lucide] { width: 13px; height: 13px; }
+.tl-flash-msg.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ==================== BOTÃO ANIM ATIVO ==================== */
+#anim-btn.active {
+    background: rgba(255,82,82,0.15);
+    border-color: rgba(255,82,82,0.4);
+    color: #ff8080;
+    box-shadow: 0 0 12px rgba(255,82,82,0.22);
+}
+
+/* ==================== RENDER QUALITY ==================== */
+.render-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/* ── Botão de engrenagem de qualidade ──────────────────────────────────────── */
+.render-quality-gear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    border: 1px solid rgba(120, 160, 255, 0.25);
+    background: rgba(100, 150, 255, 0.10);
+    color: #8ab4f8;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.18s;
+    flex-shrink: 0;
+}
+.render-quality-gear:hover {
+    background: rgba(100, 150, 255, 0.22);
+    border-color: rgba(120, 160, 255, 0.5);
+    color: #c4d8ff;
+    transform: rotate(45deg);
+}
+.render-quality-gear svg { width: 14px; height: 14px; pointer-events: none; }
+
+/* ── Painel de qualidade de imagem ──────────────────────────────────────────
+ *  Acomodado fora do post-panel header para não sobrepor o botão de download.
+ *  O painel é injetado APÓS o header (dentro do post-panel), logo antes dos
+ *  post-controls. Ele empurra o conteúdo naturalmente.
+ * ──────────────────────────────────────────────────────────────────────────── */
+.render-quality-panel {
+    margin: 0 0 10px 0;
+    padding: 14px;
+    background: rgba(8, 12, 30, 0.97);
+    border: 1px solid rgba(100, 150, 255, 0.20);
+    border-radius: 10px;
+    font-size: 12px;
+    animation: rqFadeIn 0.15s ease;
+    overflow: hidden;
+}
+.render-quality-panel.hidden { display: none; }
+@keyframes rqFadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.rq-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #8ab4f8;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(100, 150, 255, 0.12);
+}
+.rq-title svg { width: 12px; height: 12px; opacity: 0.7; }
+
+.rq-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.rq-row:last-child { margin-bottom: 0; }
+
+.rq-label {
+    color: #7a8faa;
+    font-size: 11px;
+    white-space: nowrap;
+    min-width: 82px;
+    flex-shrink: 0;
+}
+
+/* ── Select de resolução: suporte a números exatos (ex: "4K — 3840×2160") ─── */
+.rq-select {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    color: #d0d8e8;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-family: var(--font-mono);   /* mono para alinhar números */
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 0;
+    /* Garante que texto longo com dimensões exatas não seja cortado */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rq-select:hover, .rq-select:focus { border-color: rgba(100, 150, 255, 0.40); }
+/* As options herdam fundo escuro para legibilidade nas dimensões exatas */
+.rq-select option {
+    background: #0d1025;
+    color: #c8e8ff;
+    font-size: 11px;
+    font-family: monospace;
+}
+
+.rq-range {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 3px;
+    background: rgba(100, 150, 255, 0.25);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    min-width: 0;
+}
+.rq-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #6a9ef5;
+    cursor: pointer;
+    border: 2px solid #1a2540;
+    box-shadow: 0 0 4px rgba(100, 150, 255, 0.5);
+    transition: transform 0.12s;
+}
+.rq-range::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+.rq-val {
+    color: #8ab4f8;
+    font-size: 11px;
+    min-width: 30px;
+    text-align: right;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.rq-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    margin-top: 10px;
+    padding: 7px 9px;
+    background: rgba(100, 150, 255, 0.05);
+    border: 1px solid rgba(100, 150, 255, 0.10);
+    border-radius: 6px;
+    color: #5a6e88;
+    font-size: 10px;
+    line-height: 1.5;
+}
+.rq-hint svg { width: 11px; height: 11px; flex-shrink: 0; margin-top: 1px; color: #4a6a99; }
+
+/* ── Linha de dimensões exatas abaixo do select de resolução ────────────────
+ *  Injeta via JS (main.js pode atualizar #rq-res-display) a dimensão real
+ *  em pixels assim que o usuário seleciona uma opção.
+ * ──────────────────────────────────────────────────────────────────────────── */
+.rq-res-display {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(138, 180, 248, 0.65);
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+    min-width: 80px;
+}
+
+/* ==================== PAINEL DE CONFIGURAÇÕES ==================== */
+.settings-panel {
+    position: fixed;
+    top: 342px;   /* 62px toolbar offset + 280px below objects panel */
+    right: 16px;
+    width: 248px;
+    max-height: calc(100vh - 360px);
+    overflow-y: auto;
+    background: rgba(10, 12, 30, 0.97);
+    border: 1px solid rgba(100, 180, 255, 0.18);
+    border-radius: 12px;
+    padding: 14px;
+    z-index: 200;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    /* margin-top removido — usamos top:342px direto para evitar conflitos em mobile */
+}
+
+.settings-panel::-webkit-scrollbar { width: 4px; }
+.settings-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+.settings-panel .panel-header {
+    padding: 0 0 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 12px;
+}
+.settings-panel .panel-header h3 {
+    margin: 0;
+    font-size: 13px;
+    color: #7edfff;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: none;
+}
+
+.settings-section {
+    margin-bottom: 16px;
+}
+
+.settings-section h4 {
+    font-size: 10px;
+    color: #556;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 0 0 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.settings-lang-select {
+    width: 100%;
+    background: rgba(100, 180, 255, 0.08);
+    border: 1px solid rgba(100, 180, 255, 0.22);
+    border-radius: 8px;
+    color: #c8e8ff;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.18s, background 0.18s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237edfff' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px;
+}
+.settings-lang-select:hover,
+.settings-lang-select:focus {
+    border-color: rgba(100, 180, 255, 0.5);
+    background-color: rgba(100, 180, 255, 0.14);
+}
+.settings-lang-select option {
+    background: #0d1025;
+    color: #c8e8ff;
+    font-size: 13px;
+}
+
+.settings-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    margin-bottom: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 7px;
+    color: #ccc;
+    font-size: 12px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s, border-color 0.15s;
+}
+.settings-action-btn:hover {
+    background: rgba(100, 180, 255, 0.12);
+    border-color: rgba(100, 180, 255, 0.28);
+    color: #e8f4ff;
+}
+.settings-action-btn svg { width: 14px; height: 14px; opacity: 0.75; flex-shrink: 0; }
+.settings-action-btn.danger { color: #f88; border-color: rgba(255, 80, 80, 0.12); }
+.settings-action-btn.danger:hover { background: rgba(255, 60, 60, 0.12); border-color: rgba(255, 80, 80, 0.3); color: #faa; }
+.settings-action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+#skybox-color-group { padding: 8px 0 4px; }
+#skybox-color-group label { font-size: 11px; color: #778; display: block; margin-bottom: 4px; }
+#skybox-color-group input[type="color"] { width: 100%; height: 32px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: none; cursor: pointer; padding: 2px; }
+
+#physics-sub-controls { padding-top: 4px; }
+
+.physics-select {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: #ddd;
+    padding: 6px 9px;
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+    margin-top: 4px;
+}
+.physics-select:focus { border-color: rgba(100, 180, 255, 0.4); }
+
+.physics-actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.physics-btn { flex: 1; min-width: 60px; padding: 8px 6px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: background 0.14s, transform 0.08s; text-align: center; }
+.physics-btn:active { transform: scale(0.96); }
+.physics-btn.simulate { background: rgba(50,180,100,0.18); border-color: rgba(50,220,100,0.28); color: #6fea9a; }
+.physics-btn.simulate:hover { background: rgba(50,180,100,0.3); }
+.physics-btn.stop { background: rgba(220,60,60,0.18); border-color: rgba(255,80,80,0.3); color: #f87; }
+.physics-btn.stop:hover { background: rgba(220,60,60,0.28); }
+.physics-btn.reset { background: rgba(100,150,255,0.15); border-color: rgba(100,180,255,0.28); color: #7edfff; }
+.physics-btn.reset:hover { background: rgba(100,150,255,0.25); }
+
+#settings-btn.active { background: rgba(100,180,255,0.2); border-color: rgba(100,180,255,0.4); color: #7edfff; }
+
+/* ==================== MOBILE — PORTRAIT & LANDSCAPE ==================== */
+
+/* Corrige min-width no mobile para não causar overflow */
+#timeline-container { min-width: 0; }
+
+/* ── Celular em modo LANDSCAPE (tela larga, horizontal) ────────────────────── */
+@media (max-width: 600px) {
+    #timeline-container {
+        width: 100%;
+        left: 0;
+        transform: none;
+        border-radius: 10px 10px 0 0;
+        border-left: none;
+        border-right: none;
+    }
+    .post-panel {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        right: auto;
+        bottom: auto;
+        transform: translate(-50%,-50%);
+        width: calc(100vw - 32px);
+        max-width: 340px;
+        max-height: 80vh;
+        z-index: 2500;
+    }
+    .settings-panel {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        right: auto;
+        bottom: auto;
+        transform: translate(-50%,-50%);
+        width: calc(100vw - 32px);
+        max-width: 300px;
+        max-height: 80vh;
+        margin-top: 0;
+        z-index: 2500;
+    }
+    .material-panel, .particle-panel, .light-panel, .bone-panel {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        right: auto;
+        transform: translate(-50%,-50%);
+        width: calc(100vw - 32px);
+        max-width: 300px;
+        max-height: 75vh;
+    }
+    .compact-panel {
+        right: 8px;
+        top: 56px;
+        width: calc(100vw - 70px);
+        max-width: 240px;
+    }
+    .menu-button     { left: 8px;  top: 10px; }
+    .material-button { left: 54px; top: 10px; }
+    .context-button  { left: 100px; top: 10px; }
+    .top-right-toolbar { top: 10px; right: 8px; }
+    .gizmo-column { top: 58px; left: 8px; }
+    .timeline-bar {
+        padding: 6px 8px 8px;
+        gap: 5px;
+        flex-wrap: nowrap;
+    }
+    .tl-btn    { width: 30px; height: 30px; }
+    .tl-play   { width: 34px; height: 34px; }
+    .tl-clock  { font-size: 12px; min-width: 50px; padding: 2px 5px; letter-spacing: 1px; }
+    .tl-clock-label { display: none; }
+    .tl-gear-btn    { display: none; }
+}
+
+/* ── Celular em modo PORTRAIT (tela alta, vertical — o que o usuário pediu) ── */
+@media (orientation: portrait) and (max-width: 768px) {
+
+    /* Timeline ocupa 100% da largura e sobe um pouco para dar espaço */
+    #timeline-container {
+        width: 100%;
+        left: 0;
+        transform: none;
+        border-radius: 12px 12px 0 0;
+        border-left: none;
+        border-right: none;
+    }
+
+    /* A barra principal da timeline quebra em 2 linhas:
+       linha 1 → controles de transporte (play, seek, kf)
+       linha 2 → track + relógio                           */
+    .timeline-bar {
+        height: auto;
+        min-height: 56px;
+        padding: 7px 10px 9px;
+        gap: 6px;
+        flex-wrap: wrap;
+        /* Agrupa: controles de transporte na primeira linha */
+        align-items: center;
+    }
+
+    /* Track estica para ocupar a linha inteira na segunda quebra */
+    .timeline-track-wrapper {
+        order: 10;           /* empurra para a segunda linha */
+        flex-basis: 100%;    /* ocupa 100% da largura disponível */
+        height: 34px;
+        margin-top: 2px;
+    }
+
+    /* Relógio vai para o fim da primeira linha */
+    .tl-clock-group {
+        margin-left: auto;   /* empurra para a direita */
+        order: 5;
+    }
+
+    /* Botões de transporte menores no portrait */
+    .tl-btn  { width: 32px; height: 32px; }
+    .tl-play { width: 36px; height: 36px; }
+
+    /* Clock levemente menor */
+    .tl-clock {
+        font-size: 13px;
+        min-width: 54px;
+        padding: 2px 6px;
+        letter-spacing: 1.5px;
+    }
+    .tl-clock-label { display: none; }  /* economiza espaço */
+
+    /* Gear fica visível mas menor */
+    .tl-gear-btn {
+        display: flex;
+        width: 14px;
+        height: 14px;
+    }
+    .tl-gear-btn [data-lucide] { width: 11px; height: 11px; }
+
+    /* ── Todos os painéis flutuantes: centraliza, limita e habilita scroll ──
+     *
+     *  PROBLEMA RAIZ em portrait:
+     *  1. .panel base tem z-index:20 e #timeline-container tem z-index:2000
+     *     → painéis ficam ATRÁS da timeline mesmo estando "centrados"
+     *  2. .post-panel usa right:292px → em tela 390px fica a -197px (fora da tela)
+     *  3. .settings-panel usa margin-top:280px → soma com top:62px = 342px de topo
+     *     e pode extrapolar a altura da tela
+     *
+     *  SOLUÇÃO: position:fixed + centrado + z-index > 2000 (acima da timeline)
+     * ──────────────────────────────────────────────────────────────────────────── */
+
+    /* Painel de adição (botão ☰) */
+    .left-panel {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+        transform: translate(-50%, -50%) !important;
+        width: calc(100vw - 24px) !important;
+        max-width: 320px !important;
+        max-height: 78vh !important;
+        overflow-y: auto !important;
+        z-index: 2500 !important;   /* acima da timeline (2000) */
+    }
+
+    /* Painel de renderização / pós-processamento
+       Posicionado no TOPO logo abaixo da toolbar (top:56px).
+       Todos os quatro offsets explícitos para garantir compatibilidade. */
+    #post-panel {
+        position: fixed !important;
+        top: 56px !important;
+        right: auto !important;
+        bottom: auto !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: calc(100vw - 24px) !important;
+        max-width: 360px !important;
+        max-height: calc(100vh - 140px) !important;
+        overflow-y: auto !important;
+        margin-top: 0 !important;
+        margin-right: 0 !important;
+        margin-bottom: 0 !important;
+        margin-left: 0 !important;
+        z-index: 2500 !important;
+    }
+
+    /* Painel de configurações — centralizado na tela em portrait.
+       Base agora usa top:342px sem margin-top, então override é simples. */
+    #settings-panel {
+        position: fixed !important;
+        top: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: calc(100vw - 24px) !important;
+        max-width: 320px !important;
+        max-height: 76vh !important;
+        overflow-y: auto !important;
+        z-index: 2500 !important;
+    }
+
+    /* Painéis de material, partículas, luzes e ossos */
+    .material-panel, .particle-panel, .light-panel, .bone-panel {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+        transform: translate(-50%, -50%) !important;
+        width: calc(100vw - 24px) !important;
+        max-width: 320px !important;
+        max-height: 76vh !important;
+        z-index: 2500 !important;
+    }
+
+    /* Painel de objetos — fica fixo no canto superior direito */
+    .compact-panel {
+        right: 8px;
+        top: 56px;
+        width: calc(100vw - 64px);
+        max-width: 260px;
+    }
+
+    /* Botões do canto superior esquerdo */
+    .menu-button     { left: 8px;  top: 10px; }
+    .material-button { left: 54px; top: 10px; }
+    .context-button  { left: 100px; top: 10px; }
+    .top-right-toolbar { top: 10px; right: 8px; gap: 4px; }
+    .gizmo-column { top: 56px; left: 8px; }
+
+    /* Flash message sobe para não colidir com a timeline de 2 linhas */
+    .tl-flash-msg { bottom: 100px; }
+
+    /* Painel FPS: abre para cima e se ajusta */
+    .fps-panel {
+        right: 8px;
+        flex-wrap: wrap;
+        max-width: calc(100vw - 20px);
+    }
+}
+
+/* ── Telas muito estreitas em portrait (iPhone SE, etc.) ───────────────────── */
+@media (orientation: portrait) and (max-width: 390px) {
+    .tl-btn  { width: 28px; height: 28px; }
+    .tl-play { width: 32px; height: 32px; }
+    .tl-btn [data-lucide] { width: 13px; height: 13px; }
+    .tl-clock { font-size: 12px; min-width: 48px; letter-spacing: 1px; }
+    .top-right-toolbar .toolbar-btn { width: 32px; height: 32px; }
+    .top-right-toolbar [data-lucide] { width: 15px; height: 15px; }
+}
+
+
+/* Electricity button — cyan glow accent */
+#add-panel button.electricity-btn {
+    color: #00ddff;
+    text-shadow: 0 0 10px rgba(0, 200, 255, 0.7);
+    border-color: rgba(0, 200, 255, 0.25);
+    background: rgba(0, 180, 255, 0.07);
+    position: relative;
+    overflow: hidden;
+}
+
+#add-panel button.electricity-btn:hover {
+    background: rgba(0, 200, 255, 0.15);
+    border-color: rgba(0, 200, 255, 0.5);
+    box-shadow: 0 0 12px rgba(0, 200, 255, 0.35),
+                inset 0 0 8px rgba(0, 200, 255, 0.08);
+    color: #55eeff;
+    text-shadow: 0 0 14px rgba(0, 220, 255, 0.9);
+}
+
+#add-panel button.electricity-btn i {
+    filter: drop-shadow(0 0 5px rgba(0, 200, 255, 0.8));
+}
+
+#add-panel button.electricity-btn:hover i {
+    filter: drop-shadow(0 0 8px rgba(0, 220, 255, 1.0));
+}
+
+/*  subtle arc animation on the button icon */
+@keyframes electricity-flicker {
+    0%, 100% { opacity: 1; }
+    45%       { opacity: 0.85; }
+    46%       { opacity: 1; }
+    92%       { opacity: 0.9; }
+    93%       { opacity: 1; }
+}
+
+#add-panel button.electricity-btn i {
+    animation: electricity-flicker 2.8s ease-in-out infinite;
+    }/* ================================================================
+   NEXUS ENGINE — Camera System + Drag-to-Parent Objects
+   ================================================================ */
+
+/* ----------------------------------------------------------------
+   BOTÃO "CÂMERA" NO ADD PANEL (Itens Técnicos)
+---------------------------------------------------------------- */
+.camera-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    background: rgba(80, 160, 255, 0.10);
+    border: 1px solid rgba(80, 160, 255, 0.30);
+    border-radius: 8px;
+    color: #9ad4ff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    text-align: left;
+    box-sizing: border-box;
+}
+.camera-add-btn:hover {
+    background: rgba(80, 160, 255, 0.22);
+    border-color: rgba(80, 160, 255, 0.55);
+    color: #c8eaff;
+}
+.camera-add-btn svg {
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+/* ----------------------------------------------------------------
+   CAMERA POV HUD — oculto por padrão,
+   aparece apenas quando uma câmera está selecionada
+   (adicione a classe .camera-selected ao body ou ao container)
+---------------------------------------------------------------- */
+.camera-hud {
+    position: fixed !important;
+    bottom: 24px !important;
+    left: 50% !important;
+    right: auto !important;
+    top: auto !important;
+    transform: translateX(-50%) !important;
+
+    display: none; /* JS usa element.style.display = 'flex' para mostrar */
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+
+    background: rgba(6, 9, 22, 0.88);
+    border: 1px solid rgba(100, 180, 255, 0.22);
+    border-radius: 12px;
+    padding: 5px 8px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.65),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+    z-index: 9999 !important;
+    width: max-content;
+    max-width: calc(100vw - 40px);
+    user-select: none;
+}
+
+
+/* Divisor entre botões */
+.camera-hud-btn + .camera-hud-btn {
+    position: relative;
+}
+.camera-hud-btn + .camera-hud-btn::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 18%;
+    height: 64%;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+}
+
+/* ── Botões do HUD — MENORES ─────────────────────────────────── */
+.camera-hud-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+
+    /* ✦ Padding reduzido */
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+
+    font-family: inherit;
+    /* ✦ Fonte menor */
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    line-height: 1;
+    white-space: nowrap;
+
+    /* ✦ Largura mínima reduzida */
+    min-width: 58px;
+
+    transition:
+        background   0.13s ease,
+        border-color 0.13s ease,
+        color        0.13s ease,
+        transform    0.09s ease;
+
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* ✦ Ícones SVG menores */
+.camera-hud-btn svg {
+    flex-shrink: 0;
+    pointer-events: none;
+    width: 13px;
+    height: 13px;
+}
+
+.camera-hud-btn:active:not(:disabled) {
+    transform: scale(0.93);
+}
+
+.camera-hud-btn:disabled {
+    opacity: 0.28;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* POV Enter — verde */
+.camera-hud-btn.pov-enter {
+    background: rgba(50, 190, 95, 0.12);
+    border-color: rgba(50, 190, 95, 0.32);
+    color: #7eeaa0;
+}
+.camera-hud-btn.pov-enter:hover:not(:disabled) {
+    background: rgba(50, 190, 95, 0.26);
+    border-color: rgba(50, 190, 95, 0.62);
+    color: #b4ffd0;
+}
+
+/* POV Exit — vermelho-laranja */
+.camera-hud-btn.pov-exit {
+    background: rgba(220, 65, 55, 0.11);
+    border-color: rgba(220, 65, 55, 0.29);
+    color: #ff9080;
+}
+.camera-hud-btn.pov-exit:hover:not(:disabled) {
+    background: rgba(220, 65, 55, 0.24);
+    border-color: rgba(220, 65, 55, 0.56);
+    color: #ffbdba;
+}
+
+/* Settings — azul */
+.camera-hud-btn.cam-settings {
+    background: rgba(75, 145, 255, 0.11);
+    border-color: rgba(75, 145, 255, 0.27);
+    color: #90c4ff;
+}
+.camera-hud-btn.cam-settings:hover:not(:disabled) {
+    background: rgba(75, 145, 255, 0.24);
+    border-color: rgba(75, 145, 255, 0.54);
+    color: #c8e4ff;
+}
+
+/* ----------------------------------------------------------------
+   CAMERA SETTINGS PANEL — posicionado ACIMA do HUD
+---------------------------------------------------------------- */
+.camera-settings-panel {
+    position: fixed !important;
+    left: 50% !important;
+    bottom: 96px !important;   /* ajustado para o HUD menor */
+    top: auto !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+
+    z-index: 9998 !important;
+
+    width: 300px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+
+    background: rgba(6, 9, 22, 0.97);
+    border: 1px solid rgba(100, 180, 255, 0.22);
+    border-radius: 14px;
+    box-shadow: 0 16px 56px rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    pointer-events: auto;
+}
+
+.camera-settings-panel.hidden {
+    display: none !important;
+}
+
+/* Header */
+.camera-settings-panel .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: rgba(6, 9, 22, 0.99);
+    border-radius: 14px 14px 0 0;
+}
+
+.camera-settings-panel .panel-header h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #9ad4ff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Botão fechar */
+.panel-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: none;
+    border: none;
+    color: #445;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 5px;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background 0.13s, color 0.13s;
+}
+.panel-close-btn:hover {
+    background: rgba(255, 60, 60, 0.14);
+    color: #f87;
+}
+
+/* Body do painel */
+#camera-settings-body {
+    padding: 12px 15px 18px;
+}
+
+/* Rótulos de seção */
+.cam-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    color: #334455;
+    margin: 14px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.cam-section-label:first-child {
+    margin-top: 2px;
+}
+
+/* FOV arc canvas */
+.cam-fov-arc-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 7px;
+}
+#cam-fov-arc {
+    display: block;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.025);
+    flex-shrink: 0;
+}
+.cam-fov-badge {
+    font-size: 20px;
+    font-weight: 700;
+    color: #7edfff;
+    font-variant-numeric: tabular-nums;
+    min-width: 48px;
+    text-align: right;
+}
+
+/* Scrollbar */
+.camera-settings-panel::-webkit-scrollbar { width: 4px; }
+.camera-settings-panel::-webkit-scrollbar-track { background: transparent; }
+.camera-settings-panel::-webkit-scrollbar-thumb { background: rgba(100, 180, 255, 0.18); border-radius: 2px; }
+.camera-settings-panel::-webkit-scrollbar-thumb:hover { background: rgba(100, 180, 255, 0.35); }
+
+/* ----------------------------------------------------------------
+   POV OVERLAY
+---------------------------------------------------------------- */
+.pov-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 8900;
+    pointer-events: none;
+}
+.pov-overlay.hidden {
+    display: none !important;
+}
+.pov-overlay.active {
+    pointer-events: auto;
+}
+
+/* Borda verde fina */
+.pov-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid rgba(50, 210, 100, 0.28);
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+/* Crosshair */
+.pov-crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+.ch-h, .ch-v {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.70);
+    border-radius: 1px;
+}
+.ch-h {
+    width: 100%;
+    height: 1.5px;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+}
+.ch-v {
+    width: 1.5px;
+    height: 100%;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+}
+
+/* Badge câmera ativa */
+.pov-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(0, 0, 0, 0.58);
+    border: 1px solid rgba(50, 210, 100, 0.30);
+    border-radius: 7px;
+    padding: 5px 11px;
+    color: #8cf0ac;
+    font-size: 12px;
+    font-weight: 600;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Ponto piscante */
+.pov-rec-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ff8844;
+    flex-shrink: 0;
+    animation: pov-blink 1.2s ease-in-out infinite;
+}
+@keyframes pov-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.12; }
+}
+
+/* Hint de saída */
+.pov-exit-hint {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 7px;
+    padding: 5px 14px;
+    font-size: 11px;
+    color: #6677aa;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+}
+.pov-exit-hint kbd {
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 10px;
+    color: #bbb;
+    font-family: inherit;
+}
+
+/* ----------------------------------------------------------------
+   DRAG-TO-PARENT
+---------------------------------------------------------------- */
+.drag-hint {
+    font-size: 11px;
+    color: #7edfff;
+    background: rgba(80, 160, 255, 0.08);
+    border: 1px dashed rgba(80, 160, 255, 0.26);
+    border-radius: 6px;
+    padding: 5px 10px;
+    margin: 0 4px 6px;
+    text-align: center;
+    pointer-events: none;
+}
+.drag-hint.hidden {
+    display: none;
+}
+
+.tree-item {
+    cursor: grab;
+    border-radius: 5px;
+    transition: background 0.08s;
+}
+.tree-item:active {
+    cursor: grabbing;
+}
+.tree-item.dragging {
+    opacity: 0.36;
+    outline: 1px dashed rgba(100, 180, 255, 0.36);
+    outline-offset: 1px;
+}
+.tree-item.drag-over {
+    background: rgba(50, 200, 90, 0.12) !important;
+    outline: 1px solid rgba(50, 200, 90, 0.48);
+    outline-offset: -1px;
+}
+.tree-children {
+    padding-left: 14px;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    margin-left: 10px;
+}
