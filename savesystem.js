@@ -285,29 +285,26 @@ class SaveSystem {
     }
 
     _triggerDownload(bytes, filename) {
-        // Blob URL + dispatchEvent — único jeito confiável em TODOS os browsers.
+        // Blob URL é o único jeito que funciona para arquivos grandes.
+        // Data URI quebra no Chrome para arquivos > 2 MB (modelos 3D embutidos).
         //
-        // POR QUE NÃO DATA URI:
-        //   Chrome limita downloads via data URI a ~2 MB. Projetos com modelos 3D
-        //   embutidos ficam com dezenas de MB e o browser renomeia ou ignora.
+        // setAttribute('download') em vez de a.download = garante que o
+        // nome é respeitado mesmo em browsers que ignoram a propriedade direta.
         //
-        // POR QUE NÃO a.click():
-        //   Firefox ignora .click() programático — o atributo download só é
-        //   respeitado via dispatchEvent com MouseEvent real.
-        //
-        // File em vez de Blob garante que o nome fica embutido no objeto.
-        const file = new File([bytes], filename, { type: 'application/octet-stream' });
-        const url  = URL.createObjectURL(file);
+        // revokeObjectURL só depois de 10s — revogar cedo demais faz o
+        // browser cancelar o download antes de gravar no disco.
+        const blob = new Blob([bytes], { type: 'application/octet-stream' });
+        const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
-        a.href     = url;
-        a.download = filename;
+        a.setAttribute('href', url);
+        a.setAttribute('download', filename);
         a.style.display = 'none';
         document.body.appendChild(a);
-        a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        a.click();
         setTimeout(() => {
             URL.revokeObjectURL(url);
-            if (a.parentNode) a.parentNode.removeChild(a);
-        }, 3000);
+            document.body.removeChild(a);
+        }, 10000);
     }
 
     // ── Extrai textura para DataURL (JPEG comprimido) ────────────────────
@@ -759,11 +756,9 @@ function boot(scene, renderer) {
     const exportBtn = document.getElementById('export-project-btn');
     if (exportBtn) exportBtn.addEventListener('click', e => { e.stopPropagation(); save.export(); });
 
-    // ── FIX: aceita .nex e .json no mesmo input ──────────────────────────
     const importProjectBtn = document.getElementById('import-project-btn');
     const projectFileInput = document.getElementById('project-file-input');
     if (importProjectBtn && projectFileInput) {
-        // Atualiza o accept para .nex (e .json por compatibilidade)
         projectFileInput.accept = '.nex';
 
         importProjectBtn.addEventListener('click', e => { e.stopPropagation(); projectFileInput.click(); });
