@@ -1997,8 +1997,12 @@ canvas { display: block; width: 100%; height: 100%; }
   position: fixed;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%); /* centered by default; drag overrides via inline left/top */
-  width: 340px;
-  max-height: min(82vh, 600px);
+  width: 380px !important;   /* v2: bumped again + !important as a defensive guard —
+                                 no JS in this file ever sets an inline width, so if
+                                 this still doesn't look wider, the browser/server is
+                                 serving a stale cached copy of this file. */
+  max-width: 92vw;
+  max-height: min(82vh, 620px);
   z-index: 100000;
   pointer-events: auto;   /* ★ the fix: #topBar (its DOM parent) sets pointer-events:none
                                 to let clicks pass through to the 3D viewport, and only
