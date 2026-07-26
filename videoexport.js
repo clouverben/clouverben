@@ -128,34 +128,38 @@ async function exportMP4(startF, endF, fps, bitrateMbps, onProgress) {
     });
     encoder.configure({ codec, width: w, height: h, bitrate: bitrateMbps * 1_000_000, framerate: fps });
 
-    const total     = endF - startF;
-    const usPerFrame = 1_000_000 / fps;
+    // ── Correção de velocidade ────────────────────────────────────────────
+    // O fps da timeline (AnimState.fps) define a velocidade real da animação
+    // no viewport. O fps de exportação controla bitrate/codec, mas NÃO a
+    // duração do vídeo. Mantemos 1 frame de vídeo por frame de animação
+    // (frames inteiros — sem interpolação fracionada que causava frames
+    // duplicados/congelados) e usamos animFps para o timestamp de cada frame.
+    // Resultado: duração do vídeo = (endF−startF)/animFps s = viewport. ✓
+    const rawAnimFps = window.AnimationSystem?.getState?.()?.fps;
+    const animFps    = (typeof rawAnimFps === 'number' && rawAnimFps > 0 && isFinite(rawAnimFps))
+                       ? rawAnimFps : fps;
+    const total      = endF - startF;
+    const usPerFrame = 1_000_000 / animFps;   // cada frame dura 1/animFps s
 
     for (let i = 0; i < total; i++) {
         if (_cancelled) break;
 
-        // Backpressure: don't let the internal encode queue balloon —
-        // this is what caused stutter/jank on longer exports, since we
-        // were pushing frames in faster than libaom/openh264 could eat
-        // them, building up unbounded memory pressure.
+        // Backpressure: não deixa a fila de encode estourar na memória
         while (encoder.encodeQueueSize > 4) await rafYield();
 
-        await renderOneFrame(startF + i, fps);
+        // Frame inteiro → sem arredondamentos, sem frames duplicados/congelados
+        await renderOneFrame(startF + i, animFps);
 
-        // Pass the canvas directly as the VideoFrame source — this avoids
-        // the createImageBitmap() copy entirely (one less GPU→CPU→GPU
-        // round-trip per frame). VideoFrame snapshots the pixels at
-        // construction time, so it's safe even though we redraw the same
-        // canvas again next iteration.
+        // Timestamp baseado em animFps: vídeo toca na mesma velocidade do viewport
         const vf = new VideoFrame(canvas, {
             timestamp: Math.round(i * usPerFrame),
             duration:  Math.round(usPerFrame),
         });
-        encoder.encode(vf, { keyFrame: i % Math.max(1, fps) === 0 });
+        encoder.encode(vf, { keyFrame: i % Math.max(1, animFps) === 0 });
         vf.close();
 
         onProgress?.(i / total, `MP4: frame ${startF + i} / ${endF - 1}`);
-        if (i % 6 === 5) await rafYield(); // let the GPU/compositor breathe
+        if (i % 6 === 5) await rafYield();
     }
 
     await encoder.flush();
@@ -177,20 +181,62 @@ async function exportMP4(startF, endF, fps, bitrateMbps, onProgress) {
 // (which fire at the display's true refresh rate) and accumulates target
 // time without ever resetting the baseline, so timing errors never
 // compound frame-to-frame.
-function exportWebM(startF, endF, fps, bitrateMbps, onProgress) {
+// ── PATH B: MediaRecorder → WebM (fallback universal) ─────────────────────
+// KEY FIX #1: captura diretamente do canvas do renderer (não offscreen canvas)
+// usando captureStream(0) + requestFrame() para controle manual de frame.
+//
+// KEY FIX #2 (speed bug): MediaRecorder has no synthetic-timestamp escape
+// hatch like WebCodecs does — it derives each frame's real timing from the
+// actual wall-clock moment you call requestFrame(). Once renderOneFrame()
+// started going through the FULL post-processing pipeline (bloom, tone
+// mapping — needed to fix the "washed out" bug), each render could take
+// longer than a frame's time budget (frameDurMs). That overrun stretched
+// the REAL gap between requestFrame() calls, so MediaRecorder correctly
+// recorded a LONGER video for the same content — which plays back as
+// slow motion versus the live viewport. Fix: split into two phases.
+// Phase 1 renders every frame as fast as it actually takes (no real-time
+// constraint at all). Phase 2 replays the already-rendered bitmaps onto a
+// plain 2D canvas — a near-instant operation regardless of scene
+// complexity — paced with precise real-time waits that MediaRecorder
+// captures. Render speed can no longer leak into output timing.
+async function exportWebM(startF, endF, fps, bitrateMbps, onProgress) {
     const app = getApp();
-    if (!app?.renderer?.domElement) return Promise.reject(new Error('Renderer não disponível'));
+    if (!app?.renderer?.domElement) throw new Error('Renderer não disponível');
 
-    const canvas = app.renderer.domElement;
-    const total  = endF - startF;
-    const frameDurMs = 1000 / fps;
+    const glCanvas = app.renderer.domElement;
+    // ── Correção de velocidade (mesma lógica do caminho MP4) ──────────────
+    // Frames inteiros + frameDurMs baseado em animFps → vídeo toca na
+    // mesma velocidade que o viewport, sem frames duplicados ou congelados.
+    const rawAnimFps = window.AnimationSystem?.getState?.()?.fps;
+    const animFps    = (typeof rawAnimFps === 'number' && rawAnimFps > 0 && isFinite(rawAnimFps))
+                       ? rawAnimFps : fps;
+    const total      = endF - startF;
+    const frameDurMs = 1000 / animFps;   // Fase 2 reproduz na velocidade da animação
+
+    // ── Phase 1: render every frame, as fast as it actually takes ─────────
+    onProgress?.(0, 'Renderizando frames…');
+    const bitmaps = [];
+    for (let i = 0; i < total; i++) {
+        if (_cancelled) break;
+        await renderOneFrame(startF + i, animFps);   // frames inteiros
+        bitmaps.push(await createImageBitmap(glCanvas));
+        onProgress?.((i / total) * 0.55, `Renderizando: frame ${startF + i} / ${endF - 1}`);
+        if (i % 6 === 5) await rafYield();
+    }
+    if (_cancelled) { bitmaps.forEach(b => b.close()); return null; }
+
+    // ── Phase 2: replay onto a plain 2D canvas at precise real-time pace ──
+    const w = glCanvas.width, h = glCanvas.height;
+    const playCanvas = document.createElement('canvas');
+    playCanvas.width = w; playCanvas.height = h;
+    const ctx2d = playCanvas.getContext('2d', { alpha: false });
 
     const mimeType = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
         .find(m => MediaRecorder.isTypeSupported(m)) ?? 'video/webm';
 
-    const stream = canvas.captureStream(0);   // 0 = manual frame control
+    const stream = playCanvas.captureStream(0);   // 0 = manual frame control
     const track  = stream.getVideoTracks()[0];
-    if (!track) return Promise.reject(new Error('captureStream não retornou track de vídeo'));
+    if (!track) { bitmaps.forEach(b => b.close()); throw new Error('captureStream não retornou track de vídeo'); }
 
     const recorder = new MediaRecorder(stream, {
         mimeType,
@@ -201,52 +247,171 @@ function exportWebM(startF, endF, fps, bitrateMbps, onProgress) {
 
     return new Promise((resolve, reject) => {
         let frameIdx = 0;
-        let nextDue  = null; // accumulator target (ms), never reset — prevents drift
+        let nextDue  = null;
 
         async function finish() {
             try {
+                bitmaps.slice(frameIdx).forEach(b => b.close());
                 recorder.requestData();
                 await new Promise(r => { recorder.onstop = r; recorder.stop(); });
                 stream.getTracks().forEach(t => t.stop());
 
                 onProgress?.(0.97, 'Corrigindo metadados…');
-                const durationMs = (total / fps) * 1000;
+                const durationMs = (total / animFps) * 1000;   // duração real: frames / animFps
                 const raw   = new Blob(chunks, { type: mimeType });
                 const fixed = await fixWebMDuration(raw, durationMs);
                 resolve({ blob: fixed, ext: 'webm' });
             } catch (e) { reject(e); }
         }
 
-        async function rafLoop(now) {
+        function rafLoop(now) {
             if (_cancelled) { finish(); return; }
-            if (frameIdx >= total) { finish(); return; }
+            if (frameIdx >= bitmaps.length) { finish(); return; }
 
-            if (nextDue === null) nextDue = now; // first tick fires immediately
+            if (nextDue === null) nextDue = now;
 
             if (now >= nextDue) {
-                await renderOneFrame(startF + frameIdx, fps);
+                // Drawing a pre-rendered bitmap is near-instant — this is
+                // the whole point: no post-processing recompute here, so
+                // this loop can actually hit its real-time target.
+                ctx2d.drawImage(bitmaps[frameIdx], 0, 0, w, h);
+                bitmaps[frameIdx].close();
                 if (track.readyState === 'live') track.requestFrame();
-                onProgress?.(frameIdx / total, `WebM: frame ${startF + frameIdx} / ${endF - 1}`);
+                onProgress?.(0.55 + (frameIdx / total) * 0.42, `Codificando: frame ${startF + frameIdx} / ${endF - 1}`);
                 frameIdx++;
                 nextDue += frameDurMs; // accumulate — never drifts from real elapsed time
             }
             requestAnimationFrame(rafLoop);
         }
 
-        // Pre-warm: render 2 frames before recording so the GPU pipeline is
-        // hot and the very first captured frame isn't a partially-primed one.
-        (async () => {
-            await renderOneFrame(startF, fps);
-            await rafYield();
-            await renderOneFrame(startF, fps);
-            await rafYield();
+        // Pre-warm: paint the first frame before recording so the very
+        // first captured sample isn't a blank canvas.
+        if (bitmaps.length) ctx2d.drawImage(bitmaps[0], 0, 0, w, h);
+        requestAnimationFrame(() => {
             recorder.start(); // no timeslice — all data collected on stop()
             requestAnimationFrame(rafLoop);
-        })();
+        });
     });
 }
 
-// ── UI de progresso ────────────────────────────────────────────────────────
+// ── SFM-style video preview overlay ───────────────────────────────────────
+// Aparece após o export concluir — o usuário vê o vídeo e pode baixar.
+function showVideoPreview(blob, ext, filename) {
+    const url = URL.createObjectURL(blob);
+
+    const ov = document.createElement('div');
+    ov.id = '_vp_ov';
+    ov.style.cssText = [
+        'position:fixed;inset:0;z-index:100000',
+        'background:rgba(0,0,0,.88)',
+        'display:flex;align-items:center;justify-content:center',
+        'backdrop-filter:blur(10px)',
+        'animation:_vpFadeIn .22s ease',
+    ].join(';');
+
+    ov.innerHTML = `
+      <style>
+        @keyframes _vpFadeIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+        #_vp_panel { width:min(94vw,640px); background:#06080f;
+          border:1px solid rgba(100,140,255,.2); border-radius:16px;
+          overflow:hidden; box-shadow:0 28px 80px rgba(0,0,0,.95);
+          font-family:system-ui,-apple-system,sans-serif; }
+        #_vp_header { display:flex;align-items:center;justify-content:space-between;
+          padding:11px 16px; border-bottom:1px solid rgba(255,255,255,.06); }
+        #_vp_title  { display:flex;align-items:center;gap:8px;
+          font-size:13px;font-weight:700;color:#7edfff; }
+        #_vp_badge  { font-size:9px;text-transform:uppercase;letter-spacing:.08em;
+          color:#555;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);
+          padding:2px 7px;border-radius:5px; }
+        #_vp_close  { background:none;border:none;color:#555;cursor:pointer;
+          font-size:18px;padding:2px 8px;line-height:1;transition:color .12s; }
+        #_vp_close:hover { color:#bbb; }
+        #_vp_vid    { width:100%;display:block;max-height:65vh;
+          object-fit:contain;background:#000; }
+        #_vp_footer { display:flex;gap:7px;padding:12px 16px;
+          border-top:1px solid rgba(255,255,255,.06); }
+        #_vp_dl     { flex:1;padding:9px;border-radius:8px;cursor:pointer;
+          font-size:12px;font-weight:700;font-family:inherit;
+          background:linear-gradient(135deg,rgba(30,64,175,.45),rgba(56,189,248,.28));
+          border:1px solid rgba(100,180,255,.4);color:#7edfff;
+          display:flex;align-items:center;justify-content:center;gap:6px;
+          transition:opacity .15s; }
+        #_vp_dl:hover { opacity:.82; }
+        #_vp_cls2   { padding:9px 16px;border-radius:8px;cursor:pointer;
+          font-size:12px;font-family:inherit;font-weight:600;
+          border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);
+          color:#999;transition:background .12s; }
+        #_vp_cls2:hover { background:rgba(255,255,255,.09); }
+        #_vp_prog   { display:flex;align-items:center;gap:8px;
+          padding:6px 16px 0;font-size:10px;color:#555; }
+        #_vp_timeLabel { min-width:60px;text-align:right;font-variant-numeric:tabular-nums; }
+        #_vp_scrub  { flex:1;height:3px;appearance:none;background:rgba(255,255,255,.12);
+          border-radius:3px;cursor:pointer;accent-color:#38bdf8; }
+      </style>
+      <div id="_vp_panel">
+        <div id="_vp_header">
+          <div id="_vp_title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7edfff" stroke-width="2">
+              <rect x="2" y="2" width="20" height="20" rx="2"/>
+              <polygon points="10 8 16 12 10 16 10 8" fill="#7edfff" stroke="none"/>
+            </svg>
+            Preview do Vídeo
+            <span id="_vp_badge">${ext.toUpperCase()}</span>
+          </div>
+          <button id="_vp_close">✕</button>
+        </div>
+
+        <video id="_vp_vid" src="${url}" controls loop playsinline preload="auto"></video>
+
+        <div id="_vp_prog">
+          <span id="_vp_timeLabel">0:00 / 0:00</span>
+          <input id="_vp_scrub" type="range" min="0" max="1000" value="0" step="1">
+        </div>
+
+        <div id="_vp_footer">
+          <button id="_vp_dl">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 16l-6-6h4V4h4v6h4l-6 6zM4 20h16v2H4z"/></svg>
+            Baixar ${ext.toUpperCase()}
+          </button>
+          <button id="_vp_cls2">Fechar</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(ov);
+
+    const vid   = document.getElementById('_vp_vid');
+    const scrub = document.getElementById('_vp_scrub');
+    const timeL = document.getElementById('_vp_timeLabel');
+
+    function fmt(s) {
+        const m = Math.floor(s / 60), ss = Math.floor(s % 60);
+        return `${m}:${ss.toString().padStart(2,'0')}`;
+    }
+
+    vid.addEventListener('timeupdate', () => {
+        const t = vid.duration || 1;
+        scrub.value = Math.round((vid.currentTime / t) * 1000);
+        timeL.textContent = `${fmt(vid.currentTime)} / ${fmt(vid.duration || 0)}`;
+    });
+    scrub.addEventListener('input', () => {
+        if (vid.duration) vid.currentTime = (scrub.value / 1000) * vid.duration;
+    });
+
+    const close = () => { URL.revokeObjectURL(url); ov.remove(); };
+    document.getElementById('_vp_close')?.addEventListener('click', close);
+    document.getElementById('_vp_cls2')?.addEventListener('click',  close);
+    ov.addEventListener('click', e => { if (e.target === ov) close(); });
+
+    document.getElementById('_vp_dl')?.addEventListener('click', () => {
+        const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+        document.body.appendChild(a); a.click(); a.remove();
+    });
+
+    // Auto-play after metadata is ready
+    vid.addEventListener('loadedmetadata', () => vid.play().catch(() => {}));
+}
+
+
 function makeProgressUI() {
     const ov = document.createElement('div');
     ov.id    = '_vex_ov';
@@ -404,11 +569,14 @@ export async function startVideoExport(opts = {}) {
         if (_cancelled) { ui.label('Cancelado.'); await sleep(900); return; }
         if (!result?.blob) throw new Error('Exportação não produziu dados.');
 
-        ui.progress(1); ui.label('Download iniciando…');
+        ui.progress(1); ui.label('Preview pronto!');
         const ts = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
         const fn = `render_${ts}_${endF - startF}f_${fps}fps.${result.ext}`;
-        triggerDownload(URL.createObjectURL(result.blob), fn);
-        await sleep(1200);
+        // ── Fechar o overlay de progresso antes de mostrar o preview ──
+        await sleep(400);
+        ui.done();
+        showVideoPreview(result.blob, result.ext, fn);
+        return; // pula o ui.done() no finally (já foi chamado)
 
     } catch (err) {
         console.error('[VideoExport]', err);
@@ -426,7 +594,7 @@ export async function startVideoExport(opts = {}) {
         window.AnimationSystem?.goToFrame?.(opts.startF ?? 0);
         window._exportPaused = false;
         _rendering = false;
-        ui.done();
+        if (document.getElementById('_vex_ov')) ui.done(); // só se ainda visível
     }
 }
 
