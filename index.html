@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Editor</title>
+  <link rel="stylesheet" href="./ui.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/",
+        "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/",
+        "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.9.5/build/index.module.js",
+        "@dimforge/rapier3d-compat": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.12.0/rapier.min.js"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <div id="sampleCounterWrap" class="hidden">
+    <span id="sampleCounter">0 spp</span>
+  </div>
+
+  <!-- TOP BAR -->
+  <div id="topBar">
+    <div class="barContent">
+      <div id="gizmoPanel">
+        <button class="uiBtn gizmoBtn" type="button" data-mode="translate" aria-label="Mover">
+          <svg viewBox="0 0 24 24"><path d="M12 3v14"/><path d="M8 7l4-4 4 4"/><path d="M12 21v-6"/><path d="M8 17l4 4 4-4"/></svg>
+        </button>
+        <button class="uiBtn gizmoBtn" type="button" data-mode="rotate" aria-label="Rotacionar">
+          <svg viewBox="0 0 24 24"><path d="M18.5 8A8 8 0 1 0 19 14"/><path d="M19 6v4h-4"/></svg>
+        </button>
+        <button class="uiBtn gizmoBtn" type="button" data-mode="scale" aria-label="Escalar">
+          <svg viewBox="0 0 24 24"><path d="M5 5h6"/><path d="M5 5v6"/><path d="M19 19h-6"/><path d="M19 19v-6"/><path d="M5 19h6"/><path d="M5 19v-6"/><path d="M19 5h-6"/><path d="M19 5v6"/></svg>
+        </button>
+        <div class="gizmoDivider"></div>
+        <button id="deepSelectBtn" class="uiBtn gizmoBtn" type="button" aria-label="Selecionar dentro de grupo" title="Selecionar dentro de grupo (clique em objetos agrupados/importados)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="14" height="12" rx="2" stroke-dasharray="3 2"/>
+            <rect x="8" y="3" width="14" height="12" rx="2"/>
+            <circle cx="15" cy="9" r="1.5" fill="currentColor" stroke="none"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Top-bar right buttons: Animation + Settings -->
+      <div id="topBarRight">
+        <!-- Keyframe / Animation timeline button -->
+        <button id="animBtn" class="topBarIconBtn" type="button" title="Timeline de Animação">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+          <span>Animar</span>
+        </button>
+
+        <!-- Gear / Settings button -->
+        <button id="settingsBtn" class="topBarIconBtn" type="button" title="Configurações">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span>Config</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       SETTINGS MENU — a real, draggable, always-on-top game-style menu.
+       Lives outside #topBar (a true sibling, added after #topBar's own
+       closing tag) so it doesn't inherit #topBar's pointer-events:none —
+       only #topBar > .barContent opts back into pointer-events:auto, so
+       anything nested inside #topBar but outside .barContent silently
+       swallows every click/drag while still rendering visibly. Positioned
+       via inline left/top once dragged; centered by default via CSS.
+       ═══════════════════════════════════════════════════════════════════ -->
+    <div id="settingsMenuBackdrop" class="settingsMenuBackdrop hidden"></div>
+    <div id="settingsMenu" class="settingsMenu hidden">
+      <div id="settingsMenuHeader" class="settingsMenuHeader">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Configurações</span>
+        <button id="settingsMenuClose" class="settingsMenuClose" type="button">✕</button>
+      </div>
+
+      <div class="settingsMenuBody">
+
+        <!-- ── Particle Labs toggle (headline feature) ── -->
+        <div class="setSection setSectionHighlight">
+          <div class="setRow">
+            <div class="setRowLabel">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="5" cy="6" r="1.2" fill="currentColor" stroke="none" opacity=".6"/><circle cx="19" cy="6" r="1" fill="currentColor" stroke="none" opacity=".5"/><circle cx="7" cy="18" r="1.4" fill="currentColor" stroke="none" opacity=".7"/><circle cx="17" cy="17" r="1" fill="currentColor" stroke="none" opacity=".4"/></svg>
+              <div>
+                <div class="setRowTitle">Particle Labs</div>
+                <div class="setRowHint">Editor de partículas modular — laser, fogo, água e mais</div>
+              </div>
+            </div>
+            <label class="setSwitch">
+              <input type="checkbox" id="setLabsToggle">
+              <span class="setSwitchTrack"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- ── Cor de Fundo ── -->
+        <div class="setSection">
+          <div class="setSectionTitle">Cor de Fundo</div>
+          <label class="setColorRow">
+            <input type="color" id="cfgBgColor" value="#373737">
+            <span>Escolher cor</span>
+          </label>
+        </div>
+
+        <!-- ── Skybox ── -->
+        <div class="setSection">
+          <div class="setSectionTitle">Skybox</div>
+          <div class="setBtnStack">
+            <button class="setBtn" id="cfgSkyUpload" type="button">Carregar HDR / Imagem</button>
+            <input type="file" id="cfgSkyFile" accept=".hdr,.exr,.jpg,.jpeg,.png,.webp" style="display:none">
+            <button class="setBtn" id="cfgSkyGradient" type="button">Gradiente padrão</button>
+            <button class="setBtn setBtnDanger" id="cfgSkyRemove" type="button">Remover Skybox</button>
+          </div>
+        </div>
+
+        <!-- ── Viewport ── -->
+        <div class="setSection">
+          <div class="setSectionTitle">Viewport</div>
+          <label class="setToggleRow">
+            <span>Mostrar Grid</span>
+            <label class="setSwitch"><input type="checkbox" id="cfgGridVisible" checked><span class="setSwitchTrack"></span></label>
+          </label>
+          <label class="setToggleRow">
+            <span>Mostrar Axes Helper</span>
+            <label class="setSwitch"><input type="checkbox" id="cfgAxesVisible"><span class="setSwitchTrack"></span></label>
+          </label>
+        </div>
+
+        <!-- ── Projeto ── -->
+        <div class="setSection">
+          <div class="setSectionTitle">Projeto</div>
+          <div class="setBtnStack">
+            <button class="setBtn setBtnAccent" id="cfgExportNex" type="button">Exportar project.nex</button>
+            <button class="setBtn" id="cfgImportNex" type="button">Importar project.nex</button>
+            <input type="file" id="cfgImportFile" accept=".nex" style="display:none">
+          </div>
+        </div>
+
+        <!-- ── Bottom Bar ── -->
+        <div class="setSection">
+          <div class="setSectionTitle">Bottom Bar</div>
+          <label class="setToggleRow">
+            <span>Coordenadas do objeto</span>
+            <label class="setSwitch"><input type="checkbox" id="cfgBbCoords"><span class="setSwitchTrack"></span></label>
+          </label>
+          <label class="setToggleRow">
+            <span>Estatísticas da cena</span>
+            <label class="setSwitch"><input type="checkbox" id="cfgBbStats"><span class="setSwitchTrack"></span></label>
+          </label>
+          <label class="setToggleRow">
+            <span>FPS / modo render</span>
+            <label class="setSwitch"><input type="checkbox" id="cfgBbFps"><span class="setSwitchTrack"></span></label>
+          </label>
+        </div>
+
+        <!-- ── Idioma (Google Translate) ── -->
+        <div class="setSection">
+          <div class="setSectionTitle">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:5px"><path d="M5 8l6 6M4 14l6-6 2-3M2 5h7M7 2H5"/><path d="M11 5h10M14 3v2M17 3v2"/><path d="M13 15l4 6M13 21l4-6"/></svg>
+            Idioma
+          </div>
+          <select id="cfgLangSelect" class="setSelect">
+            <option value="">Português (padrão)</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="zh-CN">中文 (简体)</option>
+            <option value="ru">Русский</option>
+            <option value="it">Italiano</option>
+            <option value="ar">العربية</option>
+          </select>
+          <div id="cfgLangStatus" style="font-size:9px;color:rgba(200,200,220,.4);margin-top:4px;min-height:13px"></div>
+        </div>
+
+      </div>
+    </div>
+  <div id="leftPanel">
+    <div id="leftPanelButtons">
+      <button id="addToggle" class="leftPanelBtn" type="button" title="Adicionar">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Add</span>
+      </button>
+      <button id="materialToggle" class="leftPanelBtn" type="button" title="Material">
+        <svg viewBox="0 0 24 24"><path d="M4 8l8-5 8 5-8 5-8-5Z"/><path d="M4 16l8 5 8-5"/><path d="M4 8v8l8 5 8-5V8"/></svg>
+        <span>Material</span>
+      </button>
+      <button id="lightsToggle" class="leftPanelBtn" type="button" title="Luzes">
+        <svg viewBox="0 0 24 24"><path d="M9 21h6"/><path d="M12 3a6 6 0 0 1 4.5 10.1c-.8.9-1.3 1.8-1.5 2.9H9c-.2-1.1-.7-2-1.5-2.9A6 6 0 0 1 12 3z"/></svg>
+        <span>Luzes</span>
+      </button>
+      <button id="renderToggle" class="leftPanelBtn" type="button" title="Renderizar">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Render</span>
+      </button>
+      <button id="cameraToggle" class="leftPanelBtn" type="button" title="Câmeras">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7L16 12l7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        <span>Camera</span>
+      </button>
+    </div>
+
+    <div id="leftPanelContent">
+
+      <!-- ADD PANEL -->
+      <div id="addPanel" class="leftSubPanel hidden">
+        <div class="subPanelTitle">Adicionar</div>
+
+        <!-- Import model -->
+        <div class="panelSection">
+          <div class="sectionTitle">Importar modelo</div>
+          <button id="importModelBtn" class="importModelBtn" type="button">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Importar .glb / .gltf / .zip
+          </button>
+          <input id="modelFilePicker" type="file" accept=".glb,.gltf,.zip" class="hidden" />
+        </div>
+
+        <div class="panelSection">
+          <div class="sectionTitle">Formas geométricas</div>
+          <div class="categoryGrid">
+            <button class="menuItem" type="button" data-add="box">
+              <svg viewBox="0 0 24 24"><path d="M6 8l6-4 6 4-6 4-6-4Z"/><path d="M6 8v8l6 4 6-4V8"/><path d="M12 12v8"/></svg>
+              <span>Cubo</span>
+            </button>
+            <button class="menuItem" type="button" data-add="sphere">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M5 12h14M12 5c2.4 2 3.8 4.4 3.8 7S14.4 17 12 19c-2.4-2-3.8-4.4-3.8-7S9.6 7 12 5Z"/></svg>
+              <span>Esfera</span>
+            </button>
+            <button class="menuItem" type="button" data-add="cylinder">
+              <svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="6" ry="2.5"/><path d="M6 6v10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V6"/><ellipse cx="12" cy="16" rx="6" ry="2.5"/></svg>
+              <span>Cilindro</span>
+            </button>
+            <button class="menuItem" type="button" data-add="cone">
+              <svg viewBox="0 0 24 24"><path d="M12 5l6 12H6l6-12Z"/><path d="M6 17c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5"/></svg>
+              <span>Cone</span>
+            </button>
+            <button class="menuItem" type="button" data-add="torus">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2.3"/></svg>
+              <span>Torus</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panelSection">
+          <div class="sectionTitle">Iluminação</div>
+          <div class="categoryGrid">
+            <button class="menuItem" type="button" data-add-light="point">
+              <svg viewBox="0 0 24 24" style="stroke:#ffe066"><circle cx="12" cy="12" r="2.5"/><path d="M12 5v2M12 17v2M5 12h2M17 12h2M7.2 7.2l1.4 1.4M15.4 15.4l1.4 1.4M7.2 16.8l1.4-1.4M15.4 8.6l1.4-1.4"/></svg>
+              <span>Ponto</span>
+            </button>
+            <button class="menuItem" type="button" data-add-light="sun">
+              <svg viewBox="0 0 24 24" style="stroke:#fff080"><circle cx="12" cy="10" r="3.5"/><path d="M12 2v3M12 20v2M4 10h2M20 10h-2M6 4.5l1.8 1.8M16.2 14.7l1.8 1.8M6 15.5l1.8-1.8M16.2 5.3l1.8-1.8"/></svg>
+              <span>Solar</span>
+            </button>
+            <button class="menuItem" type="button" data-add-light="spot">
+              <svg viewBox="0 0 24 24" style="stroke:#ffa040"><circle cx="12" cy="6" r="2"/><path d="M8 20l4-14 4 14"/><path d="M8 20h8"/><path d="M9.5 16h5"/></svg>
+              <span>Spot</span>
+            </button>
+            <button class="menuItem" type="button" data-add-light="area">
+              <svg viewBox="0 0 24 24" style="stroke:#88ddff"><rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8V5M12 8V4M17 8V5"/><path d="M7 16v3M12 16v4M17 16v3"/></svg>
+              <span>Área</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MATERIAL PANEL -->
+      <div id="materialPanel" class="leftSubPanel hidden">
+        <div id="materialRoot"></div>
+      </div>
+
+      <!-- LIGHTS PANEL -->
+      <div id="lightsPanel" class="leftSubPanel hidden">
+        <div class="subPanelTitle">Iluminação</div>
+        <div id="selectedLightSection" class="hidden">
+          <div class="sectionTitle" style="margin-bottom:6px">Luz selecionada</div>
+          <div id="lightTypeLabel" class="materialTarget"></div>
+          <div class="gridForm">
+            <label><span>Cor</span><input type="color" id="lightColor" value="#ffffff"></label>
+            <label><span>Intensidade</span><input type="number" id="lightIntensity" min="0" max="200" step="0.1" value="3"></label>
+            <label id="lightDistanceRow"><span>Alcance</span><input type="number" id="lightDistance" min="0" max="500" step="0.5" value="25"></label>
+          </div>
+          <div class="sectionTitle" style="margin:10px 0 6px">Sombra</div>
+          <div class="gridForm">
+            <label><span>Mapa (px)</span><input type="number" id="lightShadowMapSize" min="64" max="4096" step="1" value="0" title="0 = sombra desligada. Ex: 512, 1024, 2048, 4096"></label>
+            <label><span>Bias</span><input type="number" id="lightShadowBias" min="-0.1" max="0.1" step="0.0001" value="0"></label>
+            <label><span>Raio blur</span><input type="number" id="lightShadowRadius" min="0" max="20" step="0.1" value="1"></label>
+            <label><span>Câm. Near</span><input type="number" id="lightShadowNear" min="0.01" max="100" step="0.01" value="0.5"></label>
+            <label><span>Câm. Far</span><input type="number" id="lightShadowFar" min="1" max="10000" step="1" value="500"></label>
+          </div>
+        </div>
+        <div id="noLightSelected" class="emptyState">
+          <svg viewBox="0 0 24 24"><path d="M9 21h6"/><path d="M12 3a6 6 0 0 1 4.5 10.1c-.8.9-1.3 1.8-1.5 2.9H9c-.2-1.1-.7-2-1.5-2.9A6 6 0 0 1 12 3z"/></svg>
+          <span>Selecione uma luz na cena para editar propriedades</span>
+        </div>
+      </div>
+
+      <!-- RENDER PANEL -->
+      <div id="renderPanel" class="leftSubPanel hidden">
+        <div class="subPanelTitle">Renderização</div>
+        <button id="renderPreviewToggle" class="renderModeBtn" type="button">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          Modo Render
+        </button>
+        <div class="tabBar">
+          <button class="tabBtn active" type="button" data-tab="modeTab">Modo</button>
+          <button class="tabBtn" type="button" data-tab="advTab">Avançado</button>
+          <button class="tabBtn" type="button" data-tab="postTab">Pós-proc.</button>
+          <button class="tabBtn" type="button" data-tab="bloomTab">Bloom</button>
+        </div>
+        <div id="modeTab" class="tabPanel">
+
+          <!-- ENGINE: exclusive radio modes -->
+          <div class="modeSectionLabel">Motor de render</div>
+          <div class="modeList">
+            <button class="renderModeBtn active" type="button" data-render-mode="standard">Padrão</button>
+            <button class="renderModeBtn" type="button" data-render-mode="pt-cycles">
+              Path Tracing <span style="font-size:8px;opacity:.6">SSAO+SSR+GI</span>
+            </button>
+            <button class="renderModeBtn" type="button" data-render-mode="pt-blender">
+              PT Blender-like <span style="font-size:8px;opacity:.6">Monte Carlo</span>
+            </button>
+          </div>
+
+          <!-- LAYERS: multi-select (Blender-style) -->
+          <div class="modeSectionLabel" style="margin-top:10px">Layers de saída <span class="layerHint">(múltiplos)</span></div>
+          <div class="layerList">
+            <button class="layerBtn" type="button" data-layer="ao">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M6 18 Q12 6 18 18" fill="none"/></svg>
+              <span>AO (SSAO)</span>
+            </button>
+            <button class="layerBtn" type="button" data-layer="gtao">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>
+              <span>GT Ambient Occ</span>
+            </button>
+            <button class="layerBtn" type="button" data-layer="outline">
+              <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke-width="2.5"/></svg>
+              <span>Outline</span>
+            </button>
+            <button class="layerBtn" type="button" data-layer="taa">
+              <svg viewBox="0 0 24 24"><path d="M3 12h18M3 7l4 5-4 5M21 7l-4 5 4 5"/></svg>
+              <span>TAA Anti-alias</span>
+            </button>
+            <button class="layerBtn" type="button" data-layer="film">
+              <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="1"/><path d="M6 2v4M10 2v4M14 2v4M18 2v4M6 18v4M10 18v4M14 18v4M18 18v4"/></svg>
+              <span>Film Grain</span>
+            </button>
+            <button class="layerBtn" type="button" data-layer="halftone">
+              <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="12" cy="6" r="1.5"/><circle cx="18" cy="6" r="1"/><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="0.5"/></svg>
+              <span>Halftone</span>
+            </button>
+            <button class="layerBtn" type="button" data-layer="pixelated">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              <span>Pixel Art</span>
+            </button>
+            <button class="layerBtn" type="button" data-layer="bokeh">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" fill="none" stroke-dasharray="2 2"/></svg>
+              <span>Bokeh (DoF)</span>
+            </button>
+          </div>
+
+          <!-- Visualization sub-panel -->
+          <div id="visModePanel" class="visModePanel hidden">
+            <div class="sectionTitle" style="margin-top:8px">Tipo de visualização</div>
+            <div class="visModeGrid">
+              <button class="visModeBtn active" type="button" data-vis-mode="normals">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 5v14M5 12h14"/></svg>
+                <span>Normais</span>
+              </button>
+              <button class="visModeBtn" type="button" data-vis-mode="depth">
+                <svg viewBox="0 0 24 24"><path d="M4 4l16 16M4 20L20 4"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                <span>Profundidade</span>
+              </button>
+              <button class="visModeBtn" type="button" data-vis-mode="wireframe">
+                <svg viewBox="0 0 24 24"><path d="M12 3l9 5v8l-9 5-9-5V8z"/><path d="M12 3v13M3 8l9 5 9-5"/></svg>
+                <span>Wireframe</span>
+              </button>
+              <button class="visModeBtn" type="button" data-vis-mode="clay">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/></svg>
+                <span>Clay</span>
+              </button>
+              <button class="visModeBtn" type="button" data-vis-mode="uv">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
+                <span>UV Check</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Outline sub-panel -->
+          <div id="outlineLayerPanel" class="visModePanel hidden">
+            <div class="sectionTitle" style="margin-top:8px">Outline</div>
+            <div class="gridForm">
+              <label><span>Strength</span><input id="outlineStrength" type="number" min="0.1" max="10" step="0.1" value="3"></label>
+              <label><span>Glow</span><input id="outlineGlow" type="number" min="0" max="1" step="0.01" value="0.5"></label>
+              <label><span>Thickness</span><input id="outlineThickness" type="number" min="0.5" max="5" step="0.5" value="2"></label>
+            </div>
+          </div>
+
+          <!-- Film sub-panel -->
+          <div id="filmLayerPanel" class="visModePanel hidden">
+            <div class="sectionTitle" style="margin-top:8px">Film Grain</div>
+            <div class="gridForm">
+              <label><span>Noise intensity</span><input id="filmNoise" type="number" min="0" max="1" step="0.01" value="0.35"></label>
+              <label><span>Scan lines</span><input id="filmScanlines" type="number" min="0" max="1" step="0.01" value="0.5"></label>
+            </div>
+          </div>
+
+          <!-- Bokeh sub-panel -->
+          <div id="bokehLayerPanel" class="visModePanel hidden">
+            <div class="sectionTitle" style="margin-top:8px">Bokeh</div>
+            <div class="gridForm">
+              <label><span>Focus</span><input id="bokehFocus" type="number" min="0.01" max="10" step="0.01" value="1"></label>
+              <label><span>Aperture</span><input id="bokehAperture" type="number" min="0.0001" max="0.01" step="0.0001" value="0.0025"></label>
+              <label><span>Max blur</span><input id="bokehMaxblur" type="number" min="0" max="0.03" step="0.0001" value="0.01"></label>
+            </div>
+          </div>
+
+          <!-- Visualization sub-panel (shown when visualization mode active) -->
+          <div id="visModePanel" class="visModePanel hidden">
+            <div class="sectionTitle" style="margin-top:8px">Tipo de visualização</div>
+            <div class="visModeGrid">
+              <button class="visModeBtn active" type="button" data-vis-mode="normals">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 5v14M5 12h14"/></svg>
+                <span>Normais</span>
+              </button>
+              <button class="visModeBtn" type="button" data-vis-mode="depth">
+                <svg viewBox="0 0 24 24"><path d="M4 4l16 16M4 20L20 4"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                <span>Profundidade</span>
+              </button>
+              <button class="visModeBtn" type="button" data-vis-mode="wireframe">
+                <svg viewBox="0 0 24 24"><path d="M12 3l9 5v8l-9 5-9-5V8z"/><path d="M12 3v13M3 8l9 5 9-5"/></svg>
+                <span>Wireframe</span>
+              </button>
+              <button class="visModeBtn" type="button" data-vis-mode="clay">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M8 16s1.5-2 4-2 4 2 4 2"/></svg>
+                <span>Clay</span>
+              </button>
+              <button class="visModeBtn" type="button" data-vis-mode="uv">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
+                <span>UV Check</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="modeHint">
+            <strong>Motor</strong> — pipeline principal de render.<br>
+            <strong>Layers</strong> — efeitos combinados (multi-seleção como Blender).<br>
+            <strong>Pre Render</strong> — PT rápido, 2 bounces.<br>
+            <strong>Final Render</strong> — PT completo, 12 bounces + GI.<br>
+            <strong>TAA</strong> — anti-aliasing temporal de alta qualidade.<br>
+            <strong>GT AO</strong> — oclusão ambiente precisa (ground-truth).<br>
+            <strong>Bokeh</strong> — profundidade de campo física.
+          </div>
+        </div>
+        <!-- ══ Avançado (Nexuz Engine) ══════════════════════════════════ -->
+        <div id="advTab" class="tabPanel hidden">
+
+          <!-- Path Tracing SSAO+SSR+SSGI -->
+          <div class="advEffectRow" id="adv-rt-row">
+            <div class="advEffectName">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              Path Tracing <span class="advBadge">SSAO+SSR+GI</span>
+            </div>
+            <label class="advToggle"><input type="checkbox" id="adv-rt-toggle"><span class="advSlider"></span></label>
+          </div>
+          <div class="advEffectBody hidden" id="adv-rt-body">
+            <div class="advHint">Cycles-like: oclusão amb. blue-noise + reflexo screen-space + iluminação indireta</div>
+            <div class="advGrid2">
+              <label>SSAO Raio<input type="range" id="adv-ssaoRadius" min="0.01" max="1.0" step="0.01" value="0.15" oninput="window._advU&&(_advU.ssaoRadius.value=+this.value)"></label>
+              <label>SSAO Intens.<input type="range" id="adv-ssaoIntensity" min="0" max="3" step="0.05" value="1.0" oninput="window._advU&&(_advU.ssaoIntensity.value=+this.value)"></label>
+              <label>SSAO Samples<input type="range" id="adv-ssaoSamples" min="4" max="64" step="4" value="16" oninput="window._advU&&(_advU.ssaoSamples.value=+this.value)"></label>
+              <label>SSAO Bias<input type="range" id="adv-ssaoBias" min="0" max="0.1" step="0.001" value="0.015" oninput="window._advU&&(_advU.ssaoBias.value=+this.value)"></label>
+              <label>SSR Intens.<input type="range" id="adv-ssrIntensity" min="0" max="1" step="0.01" value="0.3" oninput="window._advU&&(_advU.ssrIntensity.value=+this.value)"></label>
+              <label>SSR Steps<input type="range" id="adv-ssrSteps" min="8" max="128" step="8" value="32" oninput="window._advU&&(_advU.ssrSteps.value=+this.value)"></label>
+              <label>GI Intens.<input type="range" id="adv-giBias" min="0" max="2" step="0.05" value="0.5" oninput="window._advU&&(_advU.giBias.value=+this.value)"></label>
+              <label>GI Bounce<input type="range" id="adv-giBounce" min="0" max="1" step="0.01" value="0.3" oninput="window._advU&&(_advU.giBounce.value=+this.value)"></label>
+            </div>
+          </div>
+
+          <!-- Path Tracing Blender-like -->
+          <div class="advEffectRow" id="adv-pt-row">
+            <div class="advEffectName">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 3l4.5 4.5M16.5 16.5 21 21M3 21l4.5-4.5M16.5 7.5 21 3"/></svg>
+              Path Tracing <span class="advBadge" style="background:rgba(168,85,247,.18);border-color:rgba(168,85,247,.4);color:#c084fc">Blender-like</span>
+            </div>
+            <label class="advToggle"><input type="checkbox" id="adv-pt-toggle"><span class="advSlider"></span></label>
+          </div>
+          <div class="advEffectBody hidden" id="adv-pt-body">
+            <div class="advHint">Ruído Monte Carlo real — some progressivamente com Samples &amp; Denoising</div>
+            <label class="advCtrl">Escala do Ruído
+              <input type="range" id="adv-noiseScale" min="0.1" max="3" step="0.05" value="1.0" oninput="window._advU&&(_advU.noiseScale.value=+this.value)">
+            </label>
+          </div>
+
+          <!-- Soft Shadows PCSS -->
+          <div class="advEffectRow" id="adv-ss-row">
+            <div class="advEffectName">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="17" rx="8" ry="3" opacity=".5"/><circle cx="12" cy="8" r="4"/></svg>
+              Soft Shadows <span class="advBadge">PCSS</span>
+            </div>
+            <label class="advToggle"><input type="checkbox" id="adv-ss-toggle"><span class="advSlider"></span></label>
+          </div>
+          <div class="advEffectBody hidden" id="adv-ss-body">
+            <div class="advHint">Penumbra suave real baseada em profundidade (Percentage Closer Soft Shadows)</div>
+            <div class="advGrid2">
+              <label>Tam. da Luz<input type="range" id="adv-ssLightSize" min="0.001" max="0.2" step="0.001" value="0.02" oninput="window._advU&&(_advU.ssLightSize.value=+this.value)"></label>
+              <label>Samples<input type="range" id="adv-ssSamples" min="4" max="64" step="4" value="16" oninput="window._advU&&(_advU.ssSamples.value=+this.value)"></label>
+              <label>Penumbra Máx.<input type="range" id="adv-ssMaxPenumbra" min="0" max="0.05" step="0.001" value="0.015" oninput="window._advU&&(_advU.ssMaxPenumbra.value=+this.value)"></label>
+              <label>Suavidade<input type="range" id="adv-ssSoftness" min="0" max="2" step="0.05" value="0.8" oninput="window._advU&&(_advU.ssSoftness.value=+this.value)"></label>
+            </div>
+          </div>
+
+          <!-- Samples & Denoising -->
+          <div class="advEffectRow" id="adv-samples-row">
+            <div class="advEffectName">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83"/></svg>
+              Samples &amp; Denoising
+            </div>
+            <label class="advToggle"><input type="checkbox" id="adv-samples-toggle"><span class="advSlider"></span></label>
+          </div>
+          <div class="advEffectBody hidden" id="adv-samples-body">
+            <div class="advHint">Acumulação progressiva tipo Cycles viewport — ruído some sample a sample</div>
+            <div class="advGrid2">
+              <label>Samples<input type="number" id="adv-sampleCount" min="1" max="2048" value="64" style="width:70px"></label>
+              <label>Denoise Passes<input type="number" id="adv-denoisePasses" min="0" max="8" value="2" style="width:70px"></label>
+            </div>
+            <div class="advProgress" id="adv-sample-progress">
+              <div class="advProgressBar"><div id="adv-progress-fill" class="advProgressFill"></div></div>
+              <span id="adv-progress-text" style="font-size:10px;color:#60a5fa;display:block;text-align:center;margin-top:3px">Aguardando...</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <button id="adv-samples-start" class="advActionBtn" type="button">▶ Iniciar</button>
+              <button id="adv-samples-pause" class="advActionBtn" type="button" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.15);color:#aaa">⏸ Pausar</button>
+            </div>
+          </div>
+
+          <!-- Volumetric Fog -->
+          <div class="advEffectRow" id="adv-vf-row">
+            <div class="advEffectName">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M3 14h16M5 18h10"/><path d="M6 6c0-2 3-4 6-3s6 1 6 4" stroke-dasharray="2 2"/></svg>
+              Volumetric Fog <span class="advBadge" style="background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.35);color:#7edfff">3D</span>
+            </div>
+            <label class="advToggle"><input type="checkbox" id="adv-vf-toggle"><span class="advSlider"></span></label>
+          </div>
+          <div class="advEffectBody hidden" id="adv-vf-body">
+            <div class="advHint">Neblina volumétrica 3D com ruído Worley+Perlin, altura e scattering físico</div>
+            <div class="advGrid2">
+              <label>Densidade<input type="range" id="adv-vfDensity" min="0" max="2" step="0.02" value="0.4" oninput="window._advU&&(_advU.vfDensity.value=+this.value)"></label>
+              <label>Scattering<input type="range" id="adv-vfScatter" min="0" max="1" step="0.01" value="0.5" oninput="window._advU&&(_advU.vfScatter.value=+this.value)"></label>
+              <label>Altitude Máx.<input type="range" id="adv-vfMaxHeight" min="0" max="1" step="0.01" value="0.6" oninput="window._advU&&(_advU.vfMaxHeight.value=+this.value)"></label>
+              <label>Falloff<input type="range" id="adv-vfFalloff" min="0.5" max="8" step="0.1" value="2.5" oninput="window._advU&&(_advU.vfFalloff.value=+this.value)"></label>
+              <label>Escala Ruído<input type="range" id="adv-vfNoiseScale" min="0.5" max="12" step="0.1" value="3.0" oninput="window._advU&&(_advU.vfNoiseScale.value=+this.value)"></label>
+              <label>Vel. Animação<input type="range" id="adv-vfNoiseSpeed" min="0" max="2" step="0.02" value="0.15" oninput="window._advU&&(_advU.vfNoiseSpeed.value=+this.value)"></label>
+              <label>Steps<input type="range" id="adv-vfSteps" min="8" max="64" step="4" value="24" oninput="window._advU&&(_advU.vfSteps.value=+this.value)"></label>
+              <label>Anisotropia<input type="range" id="adv-vfAniso" min="-1" max="1" step="0.05" value="0.3" oninput="window._advU&&(_advU.vfAniso.value=+this.value)"></label>
+            </div>
+            <label class="advCtrl">Cor da Névoa <input type="color" id="adv-vfColor" value="#c8daf0" oninput="window._advU&&(_advU.vfColor.value.set(this.value))"></label>
+          </div>
+
+        </div>
+        <div id="postTab" class="tabPanel hidden">
+          <div class="gridForm">
+            <label class="checkField"><span>Enabled</span><input id="postEnabled" type="checkbox" checked></label>
+            <label><span>Exposure</span><input id="postExposure" type="number" min="0" max="8" step="0.01" value="1"></label>
+            <label><span>Contrast</span><input id="postContrast" type="number" min="0" max="4" step="0.01" value="1"></label>
+            <label><span>Saturation</span><input id="postSaturation" type="number" min="0" max="4" step="0.01" value="1"></label>
+            <label><span>Vignette</span><input id="postVignette" type="number" min="0" max="2" step="0.01" value="0"></label>
+          </div>
+        </div>
+        <div id="bloomTab" class="tabPanel hidden">
+          <div class="bloomSection">
+            <div class="bloomSectionHeader">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+              <span>Global</span>
+            </div>
+            <div class="gridForm">
+              <label class="checkField"><span>Enabled</span><input id="bloomEnabled" type="checkbox" checked></label>
+              <label><span>Threshold</span><input id="bloomThreshold" type="number" min="0" max="10" step="0.01" value="1"></label>
+              <label><span>Strength</span><input id="bloomStrength" type="number" min="0" max="10" step="0.01" value="0.65"></label>
+              <label><span>Radius</span><input id="bloomRadius" type="number" min="0" max="1" step="0.01" value="0.35"></label>
+            </div>
+          </div>
+          <div class="bloomSection bloomSectionObj" id="bloomObjSection">
+            <div class="bloomSectionHeader">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              <span>Objeto Selecionado</span>
+              <span id="bloomObjName" class="bloomObjName">—</span>
+            </div>
+            <div class="gridForm">
+              <label class="checkField"><span>Enabled</span><input id="bloomObjEnabled" type="checkbox"></label>
+              <label><span>Threshold</span><input id="bloomObjThreshold" type="number" min="0" max="10" step="0.01" value="0.5"></label>
+              <label><span>Strength</span><input id="bloomObjStrength" type="number" min="0" max="10" step="0.01" value="1.2"></label>
+              <label><span>Radius</span><input id="bloomObjRadius" type="number" min="0" max="1" step="0.01" value="0.4"></label>
+            </div>
+            <p class="bloomObjHint" id="bloomObjHint">Selecione um objeto na cena para configurar o bloom individual.</p>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════
+             RENDER SETTINGS — BeforeRender / Resolution / Format
+        ═══════════════════════════════════════════════════════════ -->
+        <div class="renderSettingsWrap">
+
+          <!-- ── BeforeRender toggle ── -->
+          <div class="brRow">
+            <div class="brLeft">
+              <span class="brIcon">◈</span>
+              <span class="brLabel">No Tex</span>
+            </div>
+            <label class="brToggle">
+              <input type="checkbox" id="beforeRenderToggle">
+              <span class="brSlider"></span>
+            </label>
+          </div>
+          <div id="brBanner" class="brBanner hidden">
+            <strong>No Tex Active</strong><br>
+            Texturas substituídas por cores sólidas corrompidas.<br>
+            Estilo SFM — missing texture / vertex color flat.
+          </div>
+
+          <!-- ── Resolution & Export ── -->
+          <div class="rsSectionLabel">Resolution &amp; Export</div>
+
+          <div class="rsBlock">
+            <div class="rsBlockLabel">Editor Quality</div>
+            <div class="rsSelectWrap">
+              <select id="editorQuality" class="rsSelect">
+                <option value="360">360p</option>
+                <option value="480">480p</option>
+                <option value="720" selected>720p</option>
+                <option value="1080">1080p</option>
+              </select>
+              <svg class="rsChevron" viewBox="0 0 10 6"><polyline points="1 1 5 5 9 1"/></svg>
+            </div>
+          </div>
+
+          <div class="rsBlock">
+            <div class="rsBlockLabel">Render Quality</div>
+            <div class="rsSelectWrap">
+              <select id="renderQuality" class="rsSelect">
+                <option value="720">720p</option>
+                <option value="1080" selected>1080p</option>
+                <option value="1440">1440p  (2K)</option>
+                <option value="2160">2160p  (4K)</option>
+              </select>
+              <svg class="rsChevron" viewBox="0 0 10 6"><polyline points="1 1 5 5 9 1"/></svg>
+            </div>
+          </div>
+
+          <!-- ── Format ── -->
+          <div class="rsSectionLabel" style="margin-top:10px">Format</div>
+          <div class="rsFormatRow" id="rsFormatBtns">
+            <button class="rsFormatBtn active" type="button" data-ratio="16:9" data-w="1920" data-h="1080">
+              <div class="rsFormatRect" style="width:40px;height:23px"></div>
+              <span>16:9</span>
+            </button>
+            <button class="rsFormatBtn" type="button" data-ratio="1:1" data-w="1080" data-h="1080">
+              <div class="rsFormatRect" style="width:30px;height:30px"></div>
+              <span>1:1</span>
+            </button>
+            <button class="rsFormatBtn" type="button" data-ratio="9:16" data-w="1080" data-h="1920">
+              <div class="rsFormatRect" style="width:23px;height:40px"></div>
+              <span>9:16</span>
+            </button>
+          </div>
+
+          <div class="rsDimRow">
+            <input type="number" id="renderWidth"  class="rsDimInput" value="1920" min="64" max="7680">
+            <span class="rsDimX">×</span>
+            <input type="number" id="renderHeight" class="rsDimInput" value="1080" min="64" max="7680">
+            <span class="rsDimPx">px ✓</span>
+            <button id="rsDimDefault" class="rsDimDefaultBtn" type="button">↺ Default</button>
+          </div>
+
+          <!-- ── Watermark ── -->
+          <label class="rsWatermarkRow">
+            <span>Watermark</span>
+            <input type="checkbox" id="renderWatermark" checked>
+          </label>
+
+          <!-- ── Render PNG button ── -->
+          <button id="downloadImageBtn" class="rsRenderBtn" type="button">
+            Render (PNG)
+          </button>
+        </div>
+      </div>
+
+      <!-- ── CAMERA PANEL ──────────────────────────────────────────────── -->
+      <div id="cameraPanel" class="leftSubPanel hidden">
+        <div class="subPanelTitle">Câmeras</div>
+
+        <!-- Main viewport camera settings -->
+        <div class="camSection">
+          <div class="camSectionTitle">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+            Câmera Principal (Viewport)
+          </div>
+          <div class="camPropRow">
+            <label>FOV</label>
+            <input type="range"  id="mainCamFov" min="10" max="120" step="1" value="55">
+            <input type="number" id="mainCamFovN" min="10" max="120" step="1" value="55" class="camNum">
+          </div>
+          <div class="camPropRow">
+            <label>Clip Próximo</label>
+            <input type="number" id="mainCamNear" min="0.01" max="10" step="0.01" value="0.1" class="camNumFull">
+          </div>
+          <div class="camPropRow">
+            <label>Clip Distante</label>
+            <input type="number" id="mainCamFar" min="10" max="10000" step="10" value="4000" class="camNumFull">
+          </div>
+        </div>
+
+        <!-- Scene cameras list -->
+        <div class="camSection">
+          <div class="camSectionTitle">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7L16 12l7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            Câmeras na Cena
+          </div>
+          <button id="addSceneCameraBtn" class="camAddBtn" type="button">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adicionar Câmera
+          </button>
+          <div id="sceneCameraList" class="sceneCameraList">
+            <div class="camListEmpty">Nenhuma câmera na cena.</div>
+          </div>
+        </div>
+
+        <!-- POV Controls (shown when a scene camera is selected + panel open) -->
+        <div id="camPovSection" class="camSection hidden">
+          <div class="camSectionTitle" id="camPovTitle">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            POV da Câmera Selecionada
+          </div>
+          <div class="camPovBtns">
+            <button id="enterCamPovBtn" class="camPovBtn camPovEnter" type="button">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              Entrar
+            </button>
+            <button id="exitCamPovBtn" class="camPovBtn camPovExit hidden" type="button">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Sair
+            </button>
+          </div>
+          <div class="camPropRow" style="margin-top:8px">
+            <label>FOV</label>
+            <input type="range"  id="sceneCamFov" min="10" max="120" step="1" value="45">
+            <input type="number" id="sceneCamFovN" min="10" max="120" step="1" value="45" class="camNum">
+          </div>
+        </div>
+      </div><!-- /#cameraPanel -->
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       LABS-MODE LEFT PANEL — "part 2 of Particle Labs". Shown instead of
+       the normal Add/Material/Luzes/Render/Camera tabs whenever the
+       Settings menu's Particle Labs toggle is ON. This is the SFM-style
+       function palette: browse Emitters/Initializers/Operators/Forces/
+       Renderers and click to ADD them to the selected particle system.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div id="labsLeftPanel" class="hidden">
+    <div id="labsLeftPanelButtons">
+      <button class="leftPanelBtn labsPaletteBtn active" data-palette-cat="initializers" type="button" title="Iniciadores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/></svg>
+        <span>Iniciad.</span>
+      </button>
+      <button class="leftPanelBtn labsPaletteBtn" data-palette-cat="operators" type="button" title="Operadores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33"/></svg>
+        <span>Operad.</span>
+      </button>
+      <button class="leftPanelBtn labsPaletteBtn" data-palette-cat="forces" type="button" title="Forças">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        <span>Forças</span>
+      </button>
+      <button class="leftPanelBtn labsPaletteBtn" data-palette-cat="emitters" type="button" title="Emissor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="5" cy="6" r="1.2" fill="currentColor" stroke="none" opacity=".6"/><circle cx="19" cy="6" r="1" fill="currentColor" stroke="none" opacity=".5"/><circle cx="7" cy="18" r="1.4" fill="currentColor" stroke="none" opacity=".7"/></svg>
+        <span>Emissor</span>
+      </button>
+      <button class="leftPanelBtn labsPaletteBtn" data-palette-cat="renderers" type="button" title="Renderizador">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+        <span>Render</span>
+      </button>
+    </div>
+
+    <div id="labsLeftContent">
+      <div class="labs-panel-header">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        <span id="labsPaletteTitle">Adicionar Iniciador</span>
+      </div>
+      <div id="labsPaletteHint" class="labs-palette-hint">Selecione um sistema de partículas para começar a adicionar funções.</div>
+      <div id="labsPaletteList" class="labs-palette-list"></div>
+    </div>
+  </div>
+  <div id="rightPanel">
+    <div id="rightPanelHeader">
+      <span class="rightPanelTitle">Objetos</span>
+      <div class="rightPanelActions">
+        <button id="undoBtn" class="undoRedoBtn" type="button" title="Desfazer (Ctrl+Z)" disabled>
+          <svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 2.83-6.36L3 13"/></svg>
+        </button>
+        <button id="redoBtn" class="undoRedoBtn" type="button" title="Refazer (Ctrl+Y)" disabled>
+          <svg viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M21 13a9 9 0 1 1-2.83-6.36L21 13"/></svg>
+        </button>
+        <div style="position:relative">
+          <button id="actionsBtn" class="actionsButton" type="button">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+          Actions
+        </button>
+        <div id="actionsMenu" class="actionsMenu hidden">
+          <button class="actionMenuItem" type="button" id="actionClone">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Clonar
+          </button>
+          <button class="actionMenuItem" type="button" id="actionRename">
+            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Renomear
+          </button>
+          <button class="actionMenuItem actionDanger" type="button" id="actionDelete">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            Apagar
+          </button>
+          <div class="actionDivider"></div>
+          <button class="actionMenuItem" type="button" id="actionGroup">
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+            Agrupar
+          </button>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Objects list section -->
+    <div id="objectsSection">
+      <div id="objectsList"></div>
+    </div>
+
+
+    <!-- Particle Labs panel (hidden by default, activated via the Settings menu) -->
+    <div id="labsSection" class="hidden">
+
+      <!-- Category buttons row (mirrors leftPanelButtons) -->
+      <div id="labsCategoryBtns">
+        <button class="labsCatBtn active" data-labs-cat="particles" type="button">
+          <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+          <span>Sistema</span>
+        </button>
+        <button class="labsCatBtn" data-labs-cat="stack" type="button">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
+          <span>Stack</span>
+        </button>
+      </div>
+
+      <!-- Category content area -->
+      <div id="labsCategoryContent">
+
+        <!-- ── Partículas sub-panel ── -->
+        <div class="labsSubPanel" id="labsSubParticles">
+          <div class="labs-panel-header">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18"/></svg>
+            <span>Sistemas de Partículas</span>
+            <button id="lab-add-from-list" class="labs-header-add-btn" title="Adicionar partícula" type="button">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+          <div id="labs-particles-list" class="labs-particles-list"></div>
+          <div class="labs-list-actions">
+            <button id="lab-btn-preview" class="labs-action-btn labs-action-preview" type="button">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
+              Preview
+            </button>
+            <button id="lab-btn-clear-scene" class="labs-action-btn labs-action-danger" type="button">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              Limpar Tudo
+            </button>
+          </div>
+          <!-- File operations -->
+          <div class="labs-file-ops">
+            <button id="lab-tool-add" class="labs-action-btn" type="button">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nova Partícula
+            </button>
+            <button id="lab-tool-preset" class="labs-action-btn" type="button">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Presets
+            </button>
+            <button id="lab-save-particle" class="labs-action-btn" type="button">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Salvar .nex
+            </button>
+            <button id="lab-load-particle" class="labs-action-btn" type="button">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              Carregar .nex
+            </button>
+            <input type="file" id="lab-load-file" accept=".nex" style="display:none">
+          </div>
+        </div>
+
+        <!-- ── Stack sub-panel (SFM-style: shows added modules, grouped by
+             category, each with live parameter controls) — populated
+             entirely by JS from MODULE_LIBRARY + activeSystem.stack ── -->
+        <div class="labsSubPanel hidden" id="labsSubStack">
+          <div class="lab-no-sel" id="lab-no-sel-stack">Selecione um sistema</div>
+          <div id="labs-stack-content" class="labs-stack-content" style="display:none">
+            <!-- filled by renderStack() in the controller script below -->
+          </div>
+        </div>
+
+      </div><!-- /#labsCategoryContent -->
+    </div><!-- /#labsSection -->
+
+    <!-- Preset picker overlay (global, outside labsSection) -->
+    <div id="lab-preset-picker" class="labs-preset-picker hidden">
+      <div class="labs-preset-picker-inner">
+        <div class="labs-preset-picker-header">
+          <span>Escolher Preset</span>
+          <button id="lab-preset-close" class="labs-xbtn" type="button">✕</button>
+        </div>
+        <div class="labs-preset-cats">
+          <button class="labs-preset-cat-btn active" data-cat="all" type="button">Todos</button>
+          <button class="labs-preset-cat-btn" data-cat="magic" type="button">Magic</button>
+          <button class="labs-preset-cat-btn" data-cat="combat" type="button">Combat</button>
+          <button class="labs-preset-cat-btn" data-cat="elemental" type="button">Elemental</button>
+          <button class="labs-preset-cat-btn" data-cat="atmosphere" type="button">Atmosphere</button>
+        </div>
+        <div id="lab-preset-list" class="labs-preset-list"></div>
+      </div>
+    </div>
+
+    <!-- Footer: bone reveal toggle (always visible when a skinned mesh is selected) -->
+    <div id="rightPanelFooter">
+      <button id="boneRevealBtn" class="hidden" type="button" title="Mostrar/esconder ossos">
+        <svg viewBox="0 0 24 24"><path d="M17 10c-.5-1.5-2-2.5-3.5-2.5C11 7.5 9 9.5 9 12s2 4.5 4.5 4.5c1.5 0 3-1 3.5-2.5"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>
+      </button>
+    </div>
+
+    <!-- Bone panel -->
+    <div id="bonePanelContainer" class="hidden">
+      <div id="bonePanelHeader">
+        <div class="bonePanelTitle">
+          <svg viewBox="0 0 24 24"><path d="M17 10c-.5-1.5-2-2.5-3.5-2.5C11 7.5 9 9.5 9 12s2 4.5 4.5 4.5c1.5 0 3-1 3.5-2.5" transform="translate(14 0)"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>
+          Ossos
+        </div>
+        <button class="boneCloseBtn" id="bonePanelClose" type="button" title="Fechar painel de ossos">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="boneTree"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR ──────────────────────────────────────────────── -->
+
+  <!-- ── FLOATING INFO PANEL — 2.5s long press → portátil e arrastável ──── -->
+  <div id="floatPanel" class="fp hidden">
+    <div class="fp-header" id="fpHeader">
+      <div class="fp-title-group">
+        <span id="fpTitle" class="fp-title">Objeto</span>
+        <span id="fpType"  class="fp-type-badge">Mesh</span>
+      </div>
+      <button id="fpClose" class="fp-close" type="button">✕</button>
+    </div>
+    <div class="fp-body">
+      <!-- Transformação -->
+      <div class="fp-section">
+        <div class="fp-row">
+          <span class="fp-lbl">Pos</span>
+          <span class="fp-ax fp-ax-x">X</span><span id="fpPX" class="fp-v">0.000</span>
+          <span class="fp-ax fp-ax-y">Y</span><span id="fpPY" class="fp-v">0.000</span>
+          <span class="fp-ax fp-ax-z">Z</span><span id="fpPZ" class="fp-v">0.000</span>
+        </div>
+        <div class="fp-row">
+          <span class="fp-lbl">Rot</span>
+          <span class="fp-ax fp-ax-x">X</span><span id="fpRX" class="fp-v">0.0°</span>
+          <span class="fp-ax fp-ax-y">Y</span><span id="fpRY" class="fp-v">0.0°</span>
+          <span class="fp-ax fp-ax-z">Z</span><span id="fpRZ" class="fp-v">0.0°</span>
+        </div>
+        <div class="fp-row">
+          <span class="fp-lbl">Scl</span>
+          <span class="fp-ax fp-ax-x">X</span><span id="fpSX" class="fp-v">1.000</span>
+          <span class="fp-ax fp-ax-y">Y</span><span id="fpSY" class="fp-v">1.000</span>
+          <span class="fp-ax fp-ax-z">Z</span><span id="fpSZ" class="fp-v">1.000</span>
+        </div>
+      </div>
+      <!-- Geometria (apenas Mesh) -->
+      <div class="fp-section fp-geo" id="fpGeoSection">
+        <div class="fp-geo-row">
+          <span class="fp-stat-l">Vértices</span><span id="fpVerts" class="fp-stat-v">—</span>
+          <span class="fp-stat-l">Triângulos</span><span id="fpTris" class="fp-stat-v">—</span>
+        </div>
+        <div class="fp-geo-row">
+          <span class="fp-stat-l">W</span><span id="fpBBW" class="fp-stat-v">—</span>
+          <span class="fp-stat-l">H</span><span id="fpBBH" class="fp-stat-v">—</span>
+          <span class="fp-stat-l">D</span><span id="fpBBD" class="fp-stat-v">—</span>
+        </div>
+      </div>
+      <!-- Material (apenas Mesh) -->
+      <div class="fp-section fp-mat" id="fpMatSection">
+        <div class="fp-geo-row">
+          <span class="fp-stat-l">Material</span><span id="fpMatName" class="fp-stat-v">—</span>
+          <span class="fp-stat-l">Tipo</span><span id="fpMatType" class="fp-stat-v">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR — vazio por padrão; ativar via Configurações ── -->
+  <div id="bottomBar">
+    <div class="barContent bottomBarContent">
+      <div id="bbLeft"   class="bb-hidden">
+        <span id="bbObjName" class="bbObjName">—</span>
+        <span class="bbDivider"></span>
+        <span class="bbCoordLabel bbCX">X</span><span id="bbX" class="bbCoordVal">0.00</span>
+        <span class="bbCoordLabel bbCY">Y</span><span id="bbY" class="bbCoordVal">0.00</span>
+        <span class="bbCoordLabel bbCZ">Z</span><span id="bbZ" class="bbCoordVal">0.00</span>
+      </div>
+      <div id="bbCenter" class="bb-hidden">
+        <span class="bbStat">
+          <svg viewBox="0 0 24 24"><path d="M6 8l6-4 6 4-6 4-6-4Z"/><path d="M6 8v8l6 4 6-4V8"/></svg>
+          <span id="bbObjCount">0</span>
+        </span>
+        <span class="bbStat">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="5" cy="6" r="1.2" fill="currentColor" opacity=".6"/><circle cx="19" cy="7" r="1" fill="currentColor" opacity=".5"/></svg>
+          <span id="bbParticleCount">0</span>
+        </span>
+        <span class="bbStat">
+          <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+          <span id="bbTriCount">0</span>
+        </span>
+      </div>
+      <div id="bbRight"  class="bb-hidden">
+        <span id="bbRenderMode" class="bbBadge">Editor</span>
+        <span class="bbDivider"></span>
+        <span id="bbFps" class="bbFps">— fps</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./nexfile.js"></script>
+  <script type="module" src="./particle-engine.js"></script>
+  <script type="module">
+    import { AnimationSystem } from './animation.js';
+    import { injectVideoExportPanel } from './videoexport.js';
+    import {
+        addSceneCamera, removeSceneCamera,
+        enterCameraPOV, exitCameraPOV,
+        getActivePOV, getSceneCameras,
+    } from './cameras.js';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // ── Animation button ───────────────────────────────────────────
+      document.getElementById('animBtn')?.addEventListener('click', () => {
+        AnimationSystem.toggle();
+      });
+
+      // ── Video export panel ─────────────────────────────────────────
+      setTimeout(() => {
+        const renderPanel = document.getElementById('renderPanel');
+        if (renderPanel) injectVideoExportPanel(renderPanel);
+      }, 500);
+
+      // ── Render Settings: BeforeRender, Format, Dimensions, Download ─
+      setTimeout(() => {
+
+        // ── No Tex toggle — SFM corrupted/missing texture effect ──────
+        const brToggle = document.getElementById('beforeRenderToggle');
+        const brBanner = document.getElementById('brBanner');
+
+        // Palette of SFM-style flat/corrupt colors
+        const SFM_PALETTE = [
+          0xff00ff, 0x00ff00, 0xff8800, 0x00ffff,
+          0xff2255, 0x44ff00, 0xffdd00, 0x0088ff,
+          0xcc00cc, 0x88ff44, 0xff5500, 0x00ccff,
+        ];
+
+        brToggle?.addEventListener('change', () => {
+          const on = brToggle.checked;
+          brBanner?.classList.toggle('hidden', !on);
+          window._noTexMode = on;
+          const app = window._app;
+          if (!app?.scene) return;
+
+          if (on) {
+            window._noTexOrigMats = window._noTexOrigMats || new Map();
+            let idx = 0;
+            app.scene.traverse(o => {
+              if (!o.isMesh || o.userData.isBoneMarker || o.userData.isHelper) return;
+              const THREE = window.THREE || { MeshBasicMaterial };
+              if (!window._noTexOrigMats.has(o.uuid)) window._noTexOrigMats.set(o.uuid, o.material);
+              // SFM corrupted look: flat color + no texture, cycling palette
+              const col = SFM_PALETTE[idx++ % SFM_PALETTE.length];
+              const mats = Array.isArray(o.material) ? o.material : [o.material];
+              const flatMats = mats.map(() => new THREE.MeshBasicMaterial({
+                color: col, side: THREE.DoubleSide ?? 2,
+              }));
+              o.material = flatMats.length === 1 ? flatMats[0] : flatMats;
+            });
+          } else {
+            const origMap = window._noTexOrigMats;
+            if (origMap) {
+              app.scene.traverse(o => {
+                if (o.isMesh && origMap.has(o.uuid)) {
+                  const mat = origMap.get(o.uuid);
+                  // Dispose temp materials
+                  const curr = Array.isArray(o.material) ? o.material : [o.material];
+                  curr.forEach(m => { if (m !== mat) m.dispose?.(); });
+                  o.material = mat;
+                }
+              });
+              origMap.clear();
+            }
+          }
+          window.markSceneDirty?.();
+        });
+
+
+        // ── Format buttons → update width/height inputs ─────────────
+        const wInput = document.getElementById('renderWidth');
+        const hInput = document.getElementById('renderHeight');
+        const qualSel = document.getElementById('renderQuality');
+
+        function applyFormat(btn) {
+          document.querySelectorAll('.rsFormatBtn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const q = parseInt(qualSel?.value ?? '1080');
+          const ratio = btn.dataset.ratio;
+          if (ratio === '16:9') { hInput.value = q; wInput.value = Math.round(q * 16/9); }
+          else if (ratio === '1:1') { hInput.value = q; wInput.value = q; }
+          else if (ratio === '9:16') { wInput.value = Math.round(q * 9/16); hInput.value = q; }
+        }
+
+        document.querySelectorAll('.rsFormatBtn').forEach(btn => {
+          btn.addEventListener('click', () => applyFormat(btn));
+        });
+
+        // Render quality change → recalculate dims for active format
+        qualSel?.addEventListener('change', () => {
+          const active = document.querySelector('.rsFormatBtn.active');
+          if (active) applyFormat(active);
+        });
+
+        // Default button
+        document.getElementById('rsDimDefault')?.addEventListener('click', () => {
+          const app = window._app;
+          if (app?.renderer) {
+            wInput.value = app.renderer.domElement.width;
+            hInput.value = app.renderer.domElement.height;
+          }
+        });
+
+        // ── Render (PNG) button ──────────────────────────────────────
+        // Overrides the downloadCurrentFrame to respect render settings
+        document.getElementById('downloadImageBtn')?.addEventListener('click', () => {
+          const app = window._app;
+          if (!app?.renderer) return;
+
+          const targetW  = parseInt(wInput?.value  ?? '1920');
+          const targetH  = parseInt(hInput?.value  ?? '1080');
+          const watermark = document.getElementById('renderWatermark')?.checked;
+
+          const canvas = app.renderer.domElement;
+          const origW  = canvas.width;
+          const origH  = canvas.height;
+          const origAsp = app.camera?.aspect;
+          const origPixR = app.renderer.getPixelRatio();
+
+          // Temporarily resize renderer to target resolution
+          app.renderer.setPixelRatio(1);
+          app.renderer.setSize(targetW, targetH, false);
+          if (app.camera) { app.camera.aspect = targetW / targetH; app.camera.updateProjectionMatrix(); }
+
+          // Force re-render at new size
+          try {
+            if (window._composer) window._composer.render();
+            else app.renderer.render(app.scene, app.camera);
+          } catch(e) { console.warn('Render PNG:', e); }
+
+          // Grab pixels
+          let url = canvas.toDataURL('image/png');
+
+          // Watermark
+          if (watermark) {
+            try {
+              const tmpCanvas = document.createElement('canvas');
+              tmpCanvas.width = targetW; tmpCanvas.height = targetH;
+              const ctx = tmpCanvas.getContext('2d');
+              const img = new Image();
+              img.onload = () => {
+                ctx.drawImage(img, 0, 0);
+                ctx.save();
+                ctx.globalAlpha = 0.45;
+                ctx.fillStyle = '#fff';
+                ctx.font = `bold ${Math.max(12, Math.round(targetH * 0.022))}px system-ui, sans-serif`;
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'bottom';
+                const pad = Math.round(targetH * 0.02);
+                ctx.fillText('Nexus Engine', targetW - pad, targetH - pad);
+                ctx.restore();
+                const finalUrl = tmpCanvas.toDataURL('image/png');
+                const a = Object.assign(document.createElement('a'), { href: finalUrl, download: `render-${Date.now()}.png` });
+                document.body.appendChild(a); a.click(); a.remove();
+              };
+              img.src = url;
+            } catch(e) {
+              // fallback: just download without watermark
+              const a = Object.assign(document.createElement('a'), { href: url, download: `render-${Date.now()}.png` });
+              document.body.appendChild(a); a.click(); a.remove();
+            }
+          } else {
+            const a = Object.assign(document.createElement('a'), { href: url, download: `render-${Date.now()}.png` });
+            document.body.appendChild(a); a.click(); a.remove();
+          }
+
+          // Restore original renderer size
+          app.renderer.setPixelRatio(origPixR);
+          app.renderer.setSize(origW, origH, false);
+          if (app.camera) { app.camera.aspect = origAsp; app.camera.updateProjectionMatrix(); }
+          window.markSceneDirty?.();
+        });
+
+      }, 600);
+
+      // ── Language via Google Translate free API ────────────────────
+      (() => {
+        const sel = document.getElementById('cfgLangSelect');
+        const status = document.getElementById('cfgLangStatus');
+        if (!sel) return;
+
+        const CACHE = {};
+        const BASE_LANG = 'pt';
+
+        // Collect all text nodes that should be translated
+        function getTextNodes(root) {
+          const walker = document.createTreeWalker(
+            root,
+            NodeFilter.SHOW_TEXT,
+            { acceptNode: n => {
+              const p = n.parentElement;
+              if (!p) return NodeFilter.FILTER_REJECT;
+              const tag = p.tagName?.toLowerCase?.();
+              if (['script','style','input','textarea','select'].includes(tag)) return NodeFilter.FILTER_REJECT;
+              if (n.textContent.trim() === '') return NodeFilter.FILTER_REJECT;
+              if (p.closest('#cfgLangSelect')) return NodeFilter.FILTER_REJECT;
+              return NodeFilter.FILTER_ACCEPT;
+            }}
+          );
+          const nodes = [];
+          let n;
+          while ((n = walker.nextNode())) nodes.push(n);
+          return nodes;
+        }
+
+        async function translateText(text, targetLang) {
+          const key = `${targetLang}:${text}`;
+          if (CACHE[key]) return CACHE[key];
+          try {
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${BASE_LANG}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(res.status);
+            const data = await res.json();
+            const translated = (data[0] || []).map(p => p[0]).join('');
+            CACHE[key] = translated;
+            return translated;
+          } catch {
+            return text;
+          }
+        }
+
+        // Store original text nodes for restore
+        let _origTexts = null;
+        let _lastLang = '';
+
+        sel.addEventListener('change', async () => {
+          const lang = sel.value;
+          if (lang === _lastLang) return;
+          _lastLang = lang;
+
+          if (!lang) {
+            // Restore originals
+            if (_origTexts) {
+              _origTexts.forEach(({ node, orig }) => { node.textContent = orig; });
+              _origTexts = null;
+            }
+            status.textContent = '';
+            return;
+          }
+
+          // Capture originals on first translate
+          if (!_origTexts) {
+            const nodes = getTextNodes(document.body);
+            _origTexts = nodes.map(n => ({ node: n, orig: n.textContent.trim() }));
+          } else {
+            // Restore originals before re-translating
+            _origTexts.forEach(({ node, orig }) => { node.textContent = orig; });
+          }
+
+          status.textContent = '⏳ Traduzindo...';
+          let done = 0;
+          const total = _origTexts.length;
+
+          // Batch translate in groups of 10 to avoid rate limiting
+          for (let i = 0; i < _origTexts.length; i += 10) {
+            const batch = _origTexts.slice(i, i + 10);
+            await Promise.all(batch.map(async ({ node, orig }) => {
+              if (!orig) return;
+              const translated = await translateText(orig, lang);
+              node.textContent = translated;
+              done++;
+            }));
+            if (lang !== _lastLang) return; // user changed lang mid-translate
+          }
+          status.textContent = `✓ ${done} textos traduzidos`;
+        });
+      })();
+
+      // ── Apply axes default (hidden by default) ────────────────────
+      setTimeout(() => {
+        const app = window._app;
+        if (app?.axesHelper) app.axesHelper.visible = false;
+        const axTog = document.getElementById('cfgAxesVisible');
+        if (axTog) axTog.checked = false;
+      }, 800);
+
+      // ── Initialize Nexuz Advanced Pass ────────────────────────────
+      setTimeout(() => {
+        import('./posprocess.js').then(m => {
+          m.initAdvancedPass?.();
+          m.initAdvancedUI?.();
+        }).catch(() => {});
+      }, 1000);
+
+
+      const settingsMenu     = document.getElementById('settingsMenu');
+      const settingsBackdrop = document.getElementById('settingsMenuBackdrop');
+      const settingsHead     = document.getElementById('settingsMenuHeader');
+      const settingsClose    = document.getElementById('settingsMenuClose');
+
+      function openSettingsMenu() {
+        settingsMenu.classList.remove('hidden');
+        settingsBackdrop?.classList.remove('hidden');
+        settingsBtn?.classList.add('active');
+        // Sync toggles to actual current state every time it opens
+        const labsToggle = document.getElementById('setLabsToggle');
+        if (labsToggle) labsToggle.checked = !!window._isLabsActive?.();
+        const gridToggle = document.getElementById('cfgGridVisible');
+        if (gridToggle) gridToggle.checked = window._app?.gridRoot?.visible ?? true;
+        const axesToggle = document.getElementById('cfgAxesVisible');
+        if (axesToggle) axesToggle.checked = window._app?.axesHelper?.visible ?? true;
+      }
+      function closeSettingsMenu() {
+        settingsMenu.classList.add('hidden');
+        settingsBackdrop?.classList.add('hidden');
+        settingsBtn?.classList.remove('active');
+      }
+      settingsBtn?.addEventListener('click', e => {
+        e.stopPropagation();
+        settingsMenu.classList.contains('hidden') ? openSettingsMenu() : closeSettingsMenu();
+      });
+      settingsClose?.addEventListener('click', closeSettingsMenu);
+      settingsBackdrop?.addEventListener('click', closeSettingsMenu);
+
+      // Drag by header — pointer events cover mouse + touch uniformly
+      (function makeDraggable() {
+        let dragging = false, offX = 0, offY = 0;
+        settingsHead?.addEventListener('pointerdown', e => {
+          dragging = true;
+          settingsHead.setPointerCapture(e.pointerId);
+          const rect = settingsMenu.getBoundingClientRect();
+          offX = e.clientX - rect.left;
+          offY = e.clientY - rect.top;
+          settingsMenu.style.transition = 'none';
+        });
+        settingsHead?.addEventListener('pointermove', e => {
+          if (!dragging) return;
+          const maxX = window.innerWidth  - settingsMenu.offsetWidth  - 6;
+          const maxY = window.innerHeight - settingsMenu.offsetHeight - 6;
+          const x = Math.min(Math.max(6, e.clientX - offX), maxX);
+          const y = Math.min(Math.max(6, e.clientY - offY), maxY);
+          settingsMenu.style.left   = x + 'px';
+          settingsMenu.style.top    = y + 'px';
+          settingsMenu.style.right  = 'auto';
+          settingsMenu.style.bottom = 'auto';
+          settingsMenu.style.transform = 'none';
+        });
+        settingsHead?.addEventListener('pointerup', () => { dragging = false; });
+        settingsHead?.addEventListener('pointercancel', () => { dragging = false; });
+      })();
+
+      // ── Particle Labs toggle ────────────────────────────────────────
+      // Flips BOTH the right panel (Objects ↔ Particle Labs) AND the left
+      // panel (normal tools ↔ Labs function palette) via _labsModeChange.
+      document.getElementById('setLabsToggle')?.addEventListener('change', e => {
+        window._setLabsActive?.(e.target.checked);
+      });
+      // Keep the toggle in sync if Labs is turned on/off from elsewhere
+      window.addEventListener('_labsModeChange', e => {
+        const t = document.getElementById('setLabsToggle');
+        if (t) t.checked = !!e.detail?.active;
+      });
+
+      // ── Camera panel wiring ────────────────────────────────────────
+      // Add scene camera button
+      document.getElementById('addSceneCameraBtn')?.addEventListener('click', () => {
+        addSceneCamera();
+      });
+
+      // Enter/Exit POV buttons
+      document.getElementById('enterCamPovBtn')?.addEventListener('click', () => {
+        const sc = window._selectedSceneCamera;
+        if (sc) { enterCameraPOV(sc); refreshCamPovUI(); }
+      });
+      document.getElementById('exitCamPovBtn')?.addEventListener('click', () => {
+        exitCameraPOV(); refreshCamPovUI();
+      });
+
+      // Main viewport camera FOV sync
+      const mainFovSlider = document.getElementById('mainCamFov');
+      const mainFovNum    = document.getElementById('mainCamFovN');
+      function syncMainFov(v) {
+        const fov = parseFloat(v) || 55;
+        if (mainFovSlider) mainFovSlider.value = fov;
+        if (mainFovNum)    mainFovNum.value    = fov;
+        const cam = window._app?.camera;
+        if (cam) { cam.fov = fov; cam.updateProjectionMatrix(); }
+      }
+      mainFovSlider?.addEventListener('input', e => syncMainFov(e.target.value));
+      mainFovNum?.addEventListener('input',    e => syncMainFov(e.target.value));
+      document.getElementById('mainCamNear')?.addEventListener('input', e => {
+        const cam = window._app?.camera;
+        if (cam) { cam.near = parseFloat(e.target.value)||0.1; cam.updateProjectionMatrix(); }
+      });
+      document.getElementById('mainCamFar')?.addEventListener('input', e => {
+        const cam = window._app?.camera;
+        if (cam) { cam.far = parseFloat(e.target.value)||4000; cam.updateProjectionMatrix(); }
+      });
+
+      // Scene camera FOV
+      const scFovSlider = document.getElementById('sceneCamFov');
+      const scFovNum    = document.getElementById('sceneCamFovN');
+      function syncSceneFov(v) {
+        const fov = parseFloat(v)||45;
+        if (scFovSlider) scFovSlider.value = fov;
+        if (scFovNum)    scFovNum.value    = fov;
+        const sc = window._selectedSceneCamera;
+        if (sc) sc.setFOV(fov);
+      }
+      scFovSlider?.addEventListener('input', e => syncSceneFov(e.target.value));
+      scFovNum?.addEventListener('input',    e => syncSceneFov(e.target.value));
+
+      // Refresh camera list when cameras change
+      window.addEventListener('cameras-changed', refreshCameraList);
+
+      // Show POV section when a scene camera is selected
+      window.addEventListener('scene-selection-changed', e => {
+        const obj = e.detail?.object;
+        window._selectedSceneCamera = obj?.userData?.sceneCameraRef ?? null;
+        refreshCamPovUI();
+      });
+
+      // Initial list render
+      refreshCameraList();
+    });
+
+    // ── Camera list renderer ─────────────────────────────────────────────
+    function refreshCameraList() {
+      const list = document.getElementById('sceneCameraList');
+      if (!list) return;
+      const cams = getSceneCameras();
+      if (!cams.length) {
+        list.innerHTML = '<div class="camListEmpty">Nenhuma câmera na cena.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      cams.forEach(sc => {
+        const item = document.createElement('div');
+        item.className = 'camListItem';
+        item.dataset.camId = sc.id;
+        item.innerHTML = `
+          <svg class="camItemIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 7L16 12l7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+          </svg>
+          <span class="camItemName">${sc.name}</span>
+          <button class="camItemEnterBtn" data-cam-id="${sc.id}" title="Entrar no POV">▶</button>
+          <button class="camItemDelBtn" data-cam-id="${sc.id}" title="Deletar">✕</button>`;
+        list.appendChild(item);
+      });
+      list.querySelectorAll('.camItemEnterBtn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const sc = getSceneCameras().find(c => c.id == btn.dataset.camId);
+          if (sc) { window._selectedSceneCamera = sc; enterCameraPOV(sc); refreshCamPovUI(); }
+        });
+      });
+      list.querySelectorAll('.camItemDelBtn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const sc = getSceneCameras().find(c => c.id == btn.dataset.camId);
+          if (sc) { removeSceneCamera(sc); refreshCameraList(); refreshCamPovUI(); }
+        });
+      });
+    }
+
+    function refreshCamPovUI() {
+      const section = document.getElementById('camPovSection');
+      const enterBtn = document.getElementById('enterCamPovBtn');
+      const exitBtn  = document.getElementById('exitCamPovBtn');
+      const title    = document.getElementById('camPovTitle');
+      const sc       = window._selectedSceneCamera;
+      const inPOV    = !!getActivePOV();
+      if (!section) return;
+      section.classList.toggle('hidden', !sc);
+      if (sc) {
+        if (title) title.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg> ${sc.name}`;
+        enterBtn?.classList.toggle('hidden', inPOV);
+        exitBtn?.classList.toggle('hidden', !inPOV);
+        const fov = sc.cam.fov;
+        const sl = document.getElementById('sceneCamFov'), nu = document.getElementById('sceneCamFovN');
+        if (sl) sl.value = fov; if (nu) nu.value = fov;
+      }
+    }
+
+  </script>
+
+  <script type="module" src="./main.js"></script>
+  <script>
+  // ==================== PARTICLE LAB CONTROLLER (SFM-style modular) ====================
+  (function() {
+    'use strict';
+    let _activeSystem = null;
+
+    // ── Category tab switching (Sistema / Stack) ──────────────────────
+    const _catBtns   = document.querySelectorAll('.labsCatBtn');
+    const _catPanels = {
+      particles: document.getElementById('labsSubParticles'),
+      stack:     document.getElementById('labsSubStack'),
+    };
+    function openLabsCat(cat) {
+      _catBtns.forEach(b => b.classList.toggle('active', b.dataset.labsCat === cat));
+      Object.entries(_catPanels).forEach(([k, el]) => { if (el) el.classList.toggle('hidden', k !== cat); });
+    }
+    _catBtns.forEach(btn => btn.addEventListener('click', () => openLabsCat(btn.dataset.labsCat)));
+
+    // Live particle/system counts are shown in the bottom bar
+    // (#bbParticleCount, #bbObjCount), which polls independently —
+    // no separate stats loop needed inside the Labs panel itself.
+
+    window.addEventListener('_labsPanelChange', e => {
+      if (e.detail.active) refreshParticlesList();
+    });
+
+    // ── Toast ────────────────────────────────────────────────────
+    function _toast(msg) {
+      const ex = document.getElementById('_labs_toast'); if (ex) ex.remove();
+      const t = document.createElement('div');
+      t.id = '_labs_toast'; t.textContent = msg;
+      t.style.cssText = 'position:fixed;bottom:64px;left:50%;transform:translateX(-50%);background:rgba(8,10,22,.96);border:1px solid rgba(167,139,250,.35);color:#c4b5fd;padding:7px 16px;border-radius:7px;font-size:11.5px;font-weight:600;z-index:99999;pointer-events:none;box-shadow:0 4px 18px rgba(0,0,0,.5)';
+      document.body.appendChild(t);
+      setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; }, 2200);
+      setTimeout(() => t.remove(), 2500);
+    }
+
+    // ── Particles list ──────────────────────────────────────────────
+    function refreshParticlesList() {
+      window.dispatchEvent(new Event('labs-systems-changed'));
+      const lab  = window._nexusParticleLab;
+      const list = document.getElementById('labs-particles-list');
+      if (!list) return;
+      list.innerHTML = '';
+      if (!lab) { list.innerHTML = '<div class="labs-plist-empty">Engine não pronto</div>'; return; }
+      const systems = lab.getSystems();
+      if (!systems.length) { list.innerHTML = '<div class="labs-plist-empty">Nenhuma partícula ainda</div>'; return; }
+      systems.forEach(sys => {
+        const item = document.createElement('div');
+        item.className = 'labs-plist-item' + (sys === _activeSystem ? ' active' : '');
+        item.innerHTML = `
+          <span class="labs-plist-icon">${sys._config?.icon || '✨'}</span>
+          <span class="labs-plist-name">${sys.name || 'Particle'}</span>
+          <div class="labs-plist-actions">
+            <button class="labs-plist-play" title="${sys._playing ? 'Pause' : 'Play'}">${sys._playing ? '⏸' : '▶'}</button>
+            <button class="labs-plist-del" title="Deletar">✕</button>
+          </div>`;
+        item.addEventListener('click', e => {
+          if (e.target.classList.contains('labs-plist-del') || e.target.classList.contains('labs-plist-play')) return;
+          _activeSystem = sys;
+          renderStack(sys);
+          refreshPalette();
+          refreshParticlesList();
+          openLabsCat('stack');
+        });
+        item.querySelector('.labs-plist-play').addEventListener('click', e => {
+          e.stopPropagation();
+          sys._playing ? sys.pause() : sys.play();
+          refreshParticlesList();
+        });
+        item.querySelector('.labs-plist-del').addEventListener('click', e => {
+          e.stopPropagation();
+          lab.removeSystem(sys);
+          if (_activeSystem === sys) { _activeSystem = null; renderStack(null); refreshPalette(); }
+          refreshParticlesList();
+          _toast('🗑 Removido');
+        });
+        list.appendChild(item);
+      });
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  STACK PANEL (right side) — shows what's been added to the
+    //  selected system, grouped by category, with live parameter controls
+    //  generated directly from MODULE_LIBRARY field metadata.
+    // ══════════════════════════════════════════════════════════════════
+    const CAT_SVG = {
+      emitter:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="5" cy="6" r="1.1" fill="currentColor" stroke="none" opacity=".6"/><circle cx="19" cy="6" r="1" fill="currentColor" stroke="none" opacity=".5"/><circle cx="7" cy="18" r="1.3" fill="currentColor" stroke="none" opacity=".7"/><circle cx="17" cy="17" r="1" fill="currentColor" stroke="none" opacity=".4"/></svg>',
+      initializers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8" fill="currentColor" stroke="none"/></svg>',
+      operators:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+      forces:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',
+      renderer:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>',
+    };
+    const CATEGORY_META = {
+      emitter:      { label: 'Emissor',      icon: CAT_SVG.emitter,      color: '#4ade80', engineKey: 'emitters'  },
+      initializers: { label: 'Iniciadores',  icon: CAT_SVG.initializers, color: '#38bdf8', engineKey: 'initializers' },
+      operators:    { label: 'Operadores',   icon: CAT_SVG.operators,    color: '#a78bfa', engineKey: 'operators' },
+      forces:       { label: 'Forças',       icon: CAT_SVG.forces,       color: '#f472b6', engineKey: 'forces'    },
+      renderer:     { label: 'Renderizador', icon: CAT_SVG.renderer,     color: '#fbbf24', engineKey: 'renderers' },
+    };
+    const TEXTURE_LIST = ['glow','sparkle','ring','soft','smoke','ember','flame','fireball','square',
+      'diamond','hex','heart','lightning','electric','plasma','starburst','crystal','orb','cloud','comet','cross','leaf'];
+    const CURVE_SIZE_OPTS    = { grow:'Cresce', shrink:'Encolhe', peak:'Pico', flat:'Fixo' };
+    const CURVE_OPACITY_OPTS = { fade:'Fade', fadein:'Entra', fadeout:'Sai', flat:'Fixo' };
+
+    function getML() { return window._ParticleEngine?.MODULE_LIBRARY; }
+
+    function renderStack(sys) {
+      const noSel   = document.getElementById('lab-no-sel-stack');
+      const content = document.getElementById('labs-stack-content');
+      if (!noSel || !content) return;
+      const ML = getML();
+      if (!sys || !ML) { noSel.style.display = ''; content.style.display = 'none'; return; }
+      noSel.style.display = 'none'; content.style.display = '';
+      content.innerHTML = '';
+
+      const stack = sys.getStack();
+      content.appendChild(buildCategorySection('emitter',      [stack.emitters],      sys, ML));
+      content.appendChild(buildCategorySection('initializers',  stack.initializers,   sys, ML));
+      content.appendChild(buildCategorySection('operators',     stack.operators,      sys, ML));
+      content.appendChild(buildCategorySection('forces',        stack.forces,         sys, ML));
+      content.appendChild(buildCategorySection('renderer',      [stack.renderers],     sys, ML));
+    }
+
+    function buildCategorySection(uiCategory, moduleIds, sys, ML) {
+      const meta = CATEGORY_META[uiCategory];
+      const engineCategory = meta.engineKey;
+      const ids = moduleIds.filter(Boolean);
+      const section = document.createElement('div');
+      section.className = 'stack-section';
+      const title = document.createElement('div');
+      title.className = 'stack-section-title';
+      title.style.setProperty('--cat-color', meta.color);
+      title.innerHTML = `<span class="stack-section-icon">${meta.icon}</span><span>${meta.label}</span><span class="stack-section-count">${ids.length}</span>`;
+      section.appendChild(title);
+
+      const listEl = document.createElement('div'); listEl.className = 'stack-card-list';
+      if (!ids.length) {
+        const empty = document.createElement('div'); empty.className = 'stack-empty';
+        empty.textContent = 'Nada adicionado — use a paleta no painel esquerdo';
+        listEl.appendChild(empty);
+      } else {
+        ids.forEach(moduleId => {
+          const mod = ML[engineCategory]?.find(m => m.id === moduleId);
+          if (mod) listEl.appendChild(buildModuleCard(mod, engineCategory, uiCategory, sys, meta.color));
+        });
+      }
+      section.appendChild(listEl);
+      return section;
+    }
+
+    function buildModuleCard(mod, engineCategory, uiCategory, sys, catColor) {
+      const card = document.createElement('div'); card.className = 'stack-card';
+      card.style.setProperty('--card-accent', catColor || '#a78bfa');
+      const header = document.createElement('div'); header.className = 'stack-card-header';
+      const isSingleSelect = uiCategory === 'emitter' || uiCategory === 'renderer';
+      header.innerHTML = `<span class="stack-card-icon">${mod.icon}</span><span class="stack-card-name">${mod.label}</span>`;
+      if (!isSingleSelect) {
+        const delBtn = document.createElement('button');
+        delBtn.className = 'stack-card-del';
+        delBtn.innerHTML = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        delBtn.title = 'Remover';
+        delBtn.addEventListener('click', () => {
+          sys.removeModule(engineCategory, mod.id);
+          renderStack(sys); refreshPalette();
+        });
+        header.appendChild(delBtn);
+      }
+      card.appendChild(header);
+
+      const values = sys.getModuleValues(engineCategory, mod.id);
+      const body = document.createElement('div'); body.className = 'stack-card-body';
+      mod.fields.forEach(f => {
+        if (f.key === '_shapeTag' || f.type === 'hidden') return;
+        body.appendChild(buildFieldControl(f, values[f.key], newVal => {
+          const updated = { ...sys.getModuleValues(engineCategory, mod.id), [f.key]: newVal };
+          sys.addModule(engineCategory, mod.id, updated);
+        }));
+      });
+      card.appendChild(body);
+      return card;
+    }
+
+    function buildFieldControl(field, currentVal, onChange) {
+      const row = document.createElement('div'); row.className = 'lab-row';
+      const label = document.createElement('label'); label.textContent = field.label || field.key;
+      row.appendChild(label);
+      const val = currentVal ?? field.default;
+
+      if (field.type === 'color') {
+        const inp = document.createElement('input'); inp.type = 'color';
+        inp.value = '#' + ((val >>> 0).toString(16).padStart(6, '0'));
+        inp.addEventListener('input', () => onChange(parseInt(inp.value.replace('#', ''), 16)));
+        row.appendChild(inp);
+      } else if (field.type === 'curve-size' || field.type === 'curve-opacity') {
+        const wrap = document.createElement('div'); wrap.className = 'lab-seg';
+        const opts = field.type === 'curve-size' ? CURVE_SIZE_OPTS : CURVE_OPACITY_OPTS;
+        Object.entries(opts).forEach(([o, lbl]) => {
+          const b = document.createElement('button'); b.type = 'button';
+          b.className = 'lab-seg-btn' + (o === val ? ' lab-seg-on' : '');
+          b.textContent = lbl;
+          b.addEventListener('click', () => onChange(o));
+          wrap.appendChild(b);
+        });
+        row.appendChild(wrap);
+      } else if (field.type === 'texture') {
+        row.classList.add('lab-row-texture');
+        const grid = document.createElement('div'); grid.className = 'tex-swatch-grid';
+        const PE = window._ParticleEngine;
+        TEXTURE_LIST.forEach(t => {
+          const sw = document.createElement('button'); sw.type = 'button';
+          sw.className = 'tex-swatch' + (t === val ? ' tex-swatch-on' : '');
+          sw.title = t;
+          const canvas = document.createElement('canvas');
+          canvas.width = 28; canvas.height = 28;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#0a0a12'; ctx.fillRect(0, 0, 28, 28);
+          try {
+            const tex = PE?._getTexture?.(t);
+            if (tex?.image) ctx.drawImage(tex.image, 2, 2, 24, 24);
+          } catch {}
+          sw.appendChild(canvas);
+          sw.addEventListener('click', () => {
+            grid.querySelectorAll('.tex-swatch').forEach(s => s.classList.remove('tex-swatch-on'));
+            sw.classList.add('tex-swatch-on');
+            onChange(t);
+          });
+          grid.appendChild(sw);
+        });
+        row.appendChild(grid);
+      } else if (field.type === 'blend') {
+        const wrap = document.createElement('div'); wrap.className = 'lab-seg';
+        [['additive','Aditivo'], ['normal','Normal']].forEach(([o, lbl]) => {
+          const b = document.createElement('button'); b.type = 'button';
+          b.className = 'lab-seg-btn' + (o === val ? ' lab-seg-on' : '');
+          b.textContent = lbl;
+          b.addEventListener('click', () => onChange(o));
+          wrap.appendChild(b);
+        });
+        row.appendChild(wrap);
+      } else {
+        const sliderRow = document.createElement('div'); sliderRow.className = 'lab-slider-row';
+        const range = document.createElement('input'); range.type = 'range';
+        range.min = field.min; range.max = field.max; range.step = field.step; range.value = val;
+        const num = document.createElement('input'); num.type = 'number';
+        num.min = field.min; num.max = field.max; num.step = field.step; num.value = val;
+        range.addEventListener('input', () => { num.value = range.value; onChange(parseFloat(range.value)); });
+        num.addEventListener('input',   () => { range.value = num.value; onChange(parseFloat(num.value) || 0); });
+        sliderRow.appendChild(range); sliderRow.appendChild(num);
+        row.appendChild(sliderRow);
+      }
+      return row;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  LEFT PANEL — Function Palette (SFM's "right-click → Add..." made
+    //  into a clickable categorized browser). Lives in #labsLeftPanel,
+    //  shown/hidden by main.js in response to _labsModeChange.
+    // ══════════════════════════════════════════════════════════════════
+    let _paletteCat = 'initializers';
+    const PALETTE_TITLES = {
+      initializers: 'Adicionar Iniciador', operators: 'Adicionar Operador',
+      forces: 'Adicionar Força', emitters: 'Escolher Emissor', renderers: 'Escolher Renderizador',
+    };
+    document.querySelectorAll('.labsPaletteBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _paletteCat = btn.dataset.paletteCat;
+        document.querySelectorAll('.labsPaletteBtn').forEach(b => b.classList.toggle('active', b === btn));
+        refreshPalette();
+      });
+    });
+
+    function refreshPalette() {
+      const titleEl = document.getElementById('labsPaletteTitle');
+      const hintEl  = document.getElementById('labsPaletteHint');
+      const listEl  = document.getElementById('labsPaletteList');
+      if (!listEl) return;
+      if (titleEl) titleEl.textContent = PALETTE_TITLES[_paletteCat] || 'Adicionar';
+
+      const ML = getML();
+      if (!_activeSystem || !ML) {
+        if (hintEl) hintEl.style.display = '';
+        listEl.style.display = 'none';
+        listEl.innerHTML = '';
+        return;
+      }
+      if (hintEl) hintEl.style.display = 'none';
+      listEl.style.display = '';
+      listEl.innerHTML = '';
+
+      const modules = ML[_paletteCat] || [];
+      const stack = _activeSystem.getStack();
+      const isSingleSelect = _paletteCat === 'emitters' || _paletteCat === 'renderers';
+
+      modules.forEach(mod => {
+        const already = stack[_paletteCat]?.includes
+          ? stack[_paletteCat].includes(mod.id)
+          : stack[_paletteCat] === mod.id;
+        const item = document.createElement('div');
+        item.className = 'labs-palette-item' + (already ? ' already-added' : '');
+        item.innerHTML = `
+          <span class="labs-palette-icon">${mod.icon}</span>
+          <div class="labs-palette-info">
+            <div class="labs-palette-name">${mod.label}</div>
+            <div class="labs-palette-desc">${mod.desc || ''}</div>
+          </div>
+          ${already ? '<span class="labs-palette-added-badge">' + (isSingleSelect ? 'ATIVO' : 'ADD') + '</span>' : ''}
+        `;
+        item.addEventListener('click', () => {
+          if (already && !isSingleSelect) return; // already added, non-switchable — no-op
+          _activeSystem.addModule(_paletteCat, mod.id);
+          renderStack(_activeSystem);
+          refreshPalette();
+          _toast(`${mod.icon} ${mod.label} adicionado`);
+        });
+        listEl.appendChild(item);
+      });
+    }
+
+    window.addEventListener('_labsModeChange', e => { if (e.detail.active) refreshPalette(); });
+
+    // ══════════════════════════════════════════════════════════════════
+    //  New / Preset / Save / Load — unchanged behaviour, updated to call
+    //  renderStack() instead of the old fixed-panel populateUI().
+    // ══════════════════════════════════════════════════════════════════
+    function newBlankParticle() {
+      const lab = window._nexusParticleLab;
+      if (!lab) { _toast('⏳ Engine não pronto ainda'); return; }
+      const sys = lab.createBlank('Nova Partícula');
+      _activeSystem = sys;
+      renderStack(sys);
+      refreshPalette();
+      refreshParticlesList();
+      openLabsCat('stack');
+      _toast('✨ Nova partícula criada');
+    }
+
+    function loadPreset(id) {
+      const lab = window._nexusParticleLab;
+      const PE  = window._ParticleEngine;
+      if (!lab || !PE) return;
+      const presets = PE.PARTICLE_PRESETS;
+      if (!presets?.[id]) return;
+      const sys = lab.createFromPreset(id);
+      _activeSystem = sys;
+      renderStack(sys);
+      refreshPalette();
+      refreshParticlesList();
+      openLabsCat('stack');
+      document.getElementById('lab-preset-picker')?.classList.add('hidden');
+      _toast('✨ ' + (presets[id]?.label || id));
+    }
+
+    function buildPresetGrid() {
+      const PE = window._ParticleEngine;
+      if (!PE?.PARTICLE_PRESETS) return;
+      const list = document.getElementById('lab-preset-list');
+      if (!list || list.childElementCount > 0) return;
+      const presets = PE.PARTICLE_PRESETS;
+      Object.entries(presets).forEach(([id, p]) => {
+        const btn = document.createElement('button');
+        btn.className = 'labs-preset-item';
+        btn.dataset.cat = p.category || 'all';
+        btn.innerHTML = `<span class="labs-preset-icon">${p.icon||'✨'}</span><span>${p.label||id}</span>`;
+        btn.addEventListener('click', () => loadPreset(id));
+        list.appendChild(btn);
+      });
+    }
+
+    document.getElementById('lab-tool-add')?.addEventListener('click', newBlankParticle);
+    document.getElementById('lab-add-from-list')?.addEventListener('click', newBlankParticle);
+    document.getElementById('lab-tool-preset')?.addEventListener('click', () => {
+      buildPresetGrid();
+      document.getElementById('lab-preset-picker')?.classList.remove('hidden');
+    });
+    document.getElementById('lab-preset-close')?.addEventListener('click', () =>
+      document.getElementById('lab-preset-picker')?.classList.add('hidden'));
+    document.getElementById('lab-btn-preview')?.addEventListener('click', () => {
+      if (_activeSystem) { _activeSystem.reset(); _activeSystem.play(); }
+    });
+    document.getElementById('lab-btn-clear-scene')?.addEventListener('click', () => {
+      if (!confirm('Limpar todos os sistemas de partículas?')) return;
+      window._nexusParticleLab?.clearAll();
+      _activeSystem = null; renderStack(null); refreshPalette(); refreshParticlesList();
+    });
+
+    document.getElementById('lab-save-particle')?.addEventListener('click', async () => {
+      const lab = window._nexusParticleLab;
+      if (!lab?.getSystems().length) { _toast('Nenhuma partícula para salvar'); return; }
+      const ok = await lab.exportNex('particles.nex');
+      _toast(ok ? '💾 particles.nex salvo' : '❌ Falha ao salvar');
+    });
+    document.getElementById('lab-load-particle')?.addEventListener('click', () =>
+      document.getElementById('lab-load-file')?.click());
+    document.getElementById('lab-load-file')?.addEventListener('change', async e => {
+      const f = e.target.files[0]; if (!f) return;
+      const lab = window._nexusParticleLab; if (!lab) return;
+      const result = await lab.importNex(f);
+      if (result === true) {
+        _activeSystem = lab.getActive();
+        renderStack(_activeSystem);
+        refreshPalette();
+        refreshParticlesList();
+        _toast('✅ Carregado');
+      } else { _toast('❌ ' + (result?.error || 'Falha ao carregar')); }
+      e.target.value = '';
+    });
+
+    document.querySelectorAll('.labs-preset-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.labs-preset-cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const cat = btn.dataset.cat;
+        document.querySelectorAll('.labs-preset-item').forEach(item => {
+          item.style.display = (cat === 'all' || item.dataset.cat === cat) ? '' : 'none';
+        });
+      });
+    });
+
+    // ── Init ─────────────────────────────────────────────────────
+    window.addEventListener('_nexusEngineReady', () => {
+      setTimeout(() => { buildPresetGrid(); refreshParticlesList(); refreshPalette(); }, 400);
+    });
+    if (document.readyState === 'complete') {
+      setTimeout(() => { buildPresetGrid(); refreshParticlesList(); refreshPalette(); }, 1000);
+    }
+  })();
+  </script>
+
+  <!-- ── BOTTOM BAR updater — only runs when options enabled in Settings ──── -->
+  <script>
+  (function() {
+    // All sections start hidden (bb-hidden class); config.js toggles them on request.
+    // This script wires live data to the elements when they are visible.
+
+    let _bbFpsFrames = 0, _bbFpsLast = performance.now();
+    function _bbFpsTick() {
+      _bbFpsFrames++;
+      const now = performance.now();
+      if (now - _bbFpsLast >= 900) {
+        const fps = Math.round(_bbFpsFrames / ((now - _bbFpsLast) / 1000));
+        _bbFpsLast = now; _bbFpsFrames = 0;
+        const el = document.getElementById('bbFps');
+        if (el && !document.getElementById('bbRight')?.classList.contains('bb-hidden'))
+          el.textContent = fps + ' fps';
+      }
+      requestAnimationFrame(_bbFpsTick);
+    }
+    requestAnimationFrame(_bbFpsTick);
+
+    const f2 = n => (n ?? 0).toFixed(2);
+    function _bbUpdate() {
+      const bbL = document.getElementById('bbLeft');
+      const bbC = document.getElementById('bbCenter');
+      const bbRM = document.getElementById('bbRenderMode');
+      const leftVis   = bbL   && !bbL.classList.contains('bb-hidden');
+      const centerVis = bbC   && !bbC.classList.contains('bb-hidden');
+      const rightVis  = bbRM  && !document.getElementById('bbRight')?.classList.contains('bb-hidden');
+
+      if (leftVis) {
+        const sel = window._app?.selected;
+        if (sel) {
+          const n = document.getElementById('bbObjName');
+          if (n) n.textContent = (sel.name || '—').substring(0, 18);
+          if (document.getElementById('bbX')) document.getElementById('bbX').textContent = f2(sel.position.x);
+          if (document.getElementById('bbY')) document.getElementById('bbY').textContent = f2(sel.position.y);
+          if (document.getElementById('bbZ')) document.getElementById('bbZ').textContent = f2(sel.position.z);
+        }
+      }
+      if (centerVis) {
+        const scene = window._app?.scene;
+        if (scene) {
+          let oc = 0, tc = 0;
+          scene.traverse(o => {
+            if (o.isMesh && o.name && !o.userData.isHelper && !o.userData.isLabMarker) {
+              oc++;
+              tc += o.geometry?.index ? o.geometry.index.count/3
+                  : (o.geometry?.attributes?.position?.count ?? 0)/3;
+            }
+          });
+          const oce = document.getElementById('bbObjCount');
+          const tce = document.getElementById('bbTriCount');
+          if (oce) oce.textContent = oc;
+          if (tce) tce.textContent = tc > 999 ? (tc/1000).toFixed(1)+'k' : Math.round(tc);
+          const lab = window._nexusParticleLab;
+          let pc = 0;
+          if (lab) lab.getSystems().forEach(s => { pc += s._particles?.length || 0; });
+          const pce = document.getElementById('bbParticleCount');
+          if (pce) pce.textContent = pc;
+        }
+      }
+      if (rightVis && bbRM) {
+        const mode = window._app?.renderPreviewActive ? 'render'
+                   : (window._nexusParticleLab?.getSystems().length > 0 ? 'labs' : 'editor');
+        bbRM.textContent = mode === 'render' ? 'Render' : mode === 'labs' ? 'Labs' : 'Editor';
+        bbRM.className   = 'bbBadge' + (mode !== 'editor' ? ' ' + mode : '');
+      }
+    }
+    setInterval(_bbUpdate, 300);
+    window.addEventListener('scene-selection-changed', () => setTimeout(_bbUpdate, 50));
+  })();
+  </script>
+</body>
+</html>
